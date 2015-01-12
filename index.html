@@ -31,10 +31,36 @@
     </button>
     -->
     <span class="navbar-brand" href="#">LC-3 Simulator</a>
+  </div>
 </nav>
 
 <div class="container">
   <div class="row">
+    <div class="col-md-12">
+      <h1>Execution</h2>
+      <div class="btn-group" role="group">
+        <button type="button" class="btn btn-default">Continue</button>
+        <button type="button" class="btn btn-default">Step</button>
+        <button type="button" class="btn btn-default">Next</button>
+        <button type="button" class="btn btn-default">Finish</button>
+      </div>
+      <div class="row register-row" id="registers-primary">
+        <div class="col-xs-6 col-sm-3" data-register="R0"><span class="register-name">R0</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R1"><span class="register-name">R1</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R2"><span class="register-name">R2</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R3"><span class="register-name">R3</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R4"><span class="register-name">R4</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R5"><span class="register-name">R5</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R6"><span class="register-name">R6</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R7"><span class="register-name">R7</span>: <span class="register-value hex-value">x0000</span></div>
+      </div>
+      <div class="row"><div class="col-xs-0"></div></div>
+      <div class="row register-row" id="registers-special">
+        <div class="col-xs-12 col-sm-3" data-register="PC"><span class="register-name">PC</span>: <span class="register-value hex-value" title="decimal 12288" data-toggle="tooltip">x3000</span></div>
+        <div class="col-xs-12 col-sm-3" data-register="IR"><span class="register-name">IR</span>: <span class="register-value hex-value">x1401</span></div>
+        <div class="col-xs-12 col-sm-3" data-register="PSR"><span class="register-name">PSR</span>: <span class="register-value hex-value">x0000</span></div>
+      </div>
+    </div>
     <div class="col-md-6">
       <h1>Memory</h1>
       <div class="input-group">
@@ -152,31 +178,6 @@
       </div>
     </div>
     <div class="col-md-6">
-      <h1>Execution</h2>
-      <div class="btn-group" role="group">
-        <button type="button" class="btn btn-default">Continue</button>
-        <button type="button" class="btn btn-default">Step</button>
-        <button type="button" class="btn btn-default">Next</button>
-        <button type="button" class="btn btn-default">Finish</button>
-      </div>
-      <div class="row register-row" id="registers-primary">
-        <div class="col-xs-6 col-sm-3" data-register="R0"><span class="register-name">R0</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R1"><span class="register-name">R1</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R2"><span class="register-name">R2</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R3"><span class="register-name">R3</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R4"><span class="register-name">R4</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R5"><span class="register-name">R5</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R6"><span class="register-name">R6</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R7"><span class="register-name">R7</span>: <span class="register-value hex-value">x0000</span></div>
-      </div>
-      <div class="row"><div class="col-xs-0"></div></div>
-      <div class="row register-row" id="registers-special">
-        <div class="col-xs-12 col-sm-3" data-register="PC"><span class="register-name">PC</span>: <span class="register-value hex-value" title="decimal 12288" data-toggle="tooltip">x3000</span></div>
-        <div class="col-xs-12 col-sm-3" data-register="IR"><span class="register-name">IR</span>: <span class="register-value hex-value">x1401</span></div>
-        <div class="col-xs-12 col-sm-3" data-register="PSR"><span class="register-name">PSR</span>: <span class="register-value hex-value">x0000</span></div>
-      </div>
-    </div>
-    <div class="col-xs-12">
       <h1>Console</h1>
     </div>
   </div>
