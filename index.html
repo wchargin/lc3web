@@ -30,14 +30,14 @@
       <span class="icon-bar"></span>
     </button>
     -->
-    <span class="navbar-brand" href="#">LC-3 Simulator</a>
+    <span class="navbar-brand">LC-3 Simulator</span>
   </div>
 </nav>
 
 <div class="container">
   <div class="row">
     <div class="col-md-12">
-      <h1>Execution</h2>
+      <h1>Execution</h1>
       <div class="btn-group" role="group">
         <button type="button" class="btn btn-default">Continue</button>
         <button type="button" class="btn btn-default">Step</button>
@@ -64,8 +64,8 @@
     <div class="col-md-6">
       <h1>Memory</h1>
       <div class="input-group">
-        <span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span>
-        <input type="text" class="form-control" placeholder="Jump to address">
+        <span class="input-group-addon"><label for="memory-jumpto" class="glyphicon glyphicon-search"></label></span>
+        <input type="text" id="memory-jumpto" class="form-control" placeholder="Jump to address">
       </div>
       <table class="table table" id="memory-table">
         <thead>
@@ -77,94 +77,94 @@
           </tr>
         </thead>
         <tbody>
-        <tr id="memory-cell" data-cell-row="0">
+        <tr class="memory-cell" data-cell-row="0">
           <td><span class="memory-address hex-value">x3000</span></td><td><span class="memory-label"></span></td><td><span class="memory-hex hex-value">x1401</span></td><td><span class="memory-instruction">ADD  R2, R0, R1</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="1">
+        <tr class="memory-cell" data-cell-row="1">
           <td><span class="memory-address hex-value">x3001</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="2">
+        <tr class="memory-cell" data-cell-row="2">
           <td><span class="memory-address hex-value">x3002</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="3">
+        <tr class="memory-cell" data-cell-row="3">
           <td><span class="memory-address hex-value">x3003</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="4">
+        <tr class="memory-cell" data-cell-row="4">
           <td><span class="memory-address hex-value">x3004</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="5">
+        <tr class="memory-cell" data-cell-row="5">
           <td><span class="memory-address hex-value">x3005</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="6">
+        <tr class="memory-cell" data-cell-row="6">
           <td><span class="memory-address hex-value">x3006</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="7">
+        <tr class="memory-cell" data-cell-row="7">
           <td><span class="memory-address hex-value">x3007</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="8">
+        <tr class="memory-cell" data-cell-row="8">
           <td><span class="memory-address hex-value">x3008</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="9">
+        <tr class="memory-cell" data-cell-row="9">
           <td><span class="memory-address hex-value">x3009</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="10">
+        <tr class="memory-cell" data-cell-row="10">
           <td><span class="memory-address hex-value">x300A</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="11">
+        <tr class="memory-cell" data-cell-row="11">
           <td><span class="memory-address hex-value">x300B</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="12">
+        <tr class="memory-cell" data-cell-row="12">
           <td><span class="memory-address hex-value">x300C</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="13">
+        <tr class="memory-cell" data-cell-row="13">
           <td><span class="memory-address hex-value">x300D</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="14">
+        <tr class="memory-cell" data-cell-row="14">
           <td><span class="memory-address hex-value">x300E</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
           <td><span class="memory-instruction">NOP</span></td>
         </tr>
-        <tr id="memory-cell" data-cell-row="15">
+        <tr class="memory-cell" data-cell-row="15">
           <td><span class="memory-address hex-value">x300F</span></td>
           <td><span class="memory-label"></span></td>
           <td><span class="memory-hex hex-value">x0000</span></td>
@@ -173,7 +173,7 @@
         </tbody>
       </table>
       <div class="row" id="scroll-container">
-        <div class="col-xs-12">
+        <div class="col-xs-12 col-sm-6">
           <div class="btn-group" role="group">
             <button type="button" class="btn btn-default" id="mem-scroll-up"><span class="glyphicon glyphicon-chevron-up"></span></button>
             <button type="button" class="btn btn-default" id="mem-scroll-down"><span class="glyphicon glyphicon-chevron-down"></span></button>
@@ -181,6 +181,20 @@
           <div class="btn-group" role="group">
             <button type="button" class="btn btn-default" id="mem-jump-pc">Jump to PC</button>
           </div>
+        </div>
+        <div class="col-xs-12 col-sm-6">
+          <div class="btn-group dropup" role="group">
+            <button type="button" class="btn btn-default" id="mem-upload">Upload</button>
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+              <span class="caret"></span>
+              <span class="sr-only">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+              <li><a href="#" role="button" id="mem-upload-object">Object file</a></li>
+              <li><a href="#" role="button" id="mem-upload-symbol">Symbol table</a></li>
+            </ul>
+          </div>
+          <button class="btn btn-default" type="button" id="mem-dump">Dump Memory</button>
         </div>
       </div>
     </div>
@@ -190,8 +204,6 @@
   </div>
 </div>
 
-</body>
-
 <!-- Bootstrap core JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
@@ -199,5 +211,6 @@
 <script src="js/bootstrap.min.js"></script>
 <script src="js/lc3_ui.js"></script>
 
+</body>
 
 </html>
