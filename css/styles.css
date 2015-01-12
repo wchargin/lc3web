@@ -1,0 +1,31 @@
+/* styles.css for web-based LC3 simulator */
+
+#scroll-container
+{
+    text-align: center;
+}
+
+.address-pc
+{
+    background-color: #f5f5f5;
+}
+
+.address-breakpoint
+{
+    background-color: #f2dede;
+}
+
+.register-name
+{
+    font-weight: bold;
+}
+
+.memory-address
+{
+    font-family: monospace;
+}
+
+.hex-value
+{
+    font-family: monospace;
+}

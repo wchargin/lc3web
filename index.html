@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Web-based simulator for the LC-3 (Little Computer 3)">
+<meta name="author" content="William Chargin">
+
+<title>LC3 Simulator</title>
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/styles.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<!-- Don't really need a navbar for a one-page site...but it's here in case we add more stuff later. -->
+<nav class="navbar navbar-inverse navbar-static-top">
+  <div class="container">
+    <!-- This is the hamburger icon for mobile, but we don't have any links. -->
+    <!--
+    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    -->
+    <span class="navbar-brand" href="#">LC-3 Simulator</a>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-6">
+      <h1>Memory</h1>
+      <div class="input-group">
+        <span class="input-group-addon"><span class="glyphicon glyphicon-search"></span></span>
+        <input type="text" class="form-control" placeholder="Jump to address">
+      </div>
+      <table class="table table" id="memory-table">
+        <thead>
+          <tr>
+            <th>0x</th>
+            <th>Label</th>
+            <th>Hex</th>
+            <th>Instruction</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr id="memory-cell" data-cell-row="0">
+          <td class="memory-address hex-value">x3000</td><td class="memory-label"></td><td class="memory-hex hex-value">x1401</td><td class="memory-instruction">ADD  R2, R0, R1</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="1">
+          <td class="memory-address hex-value">x3001</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="2">
+          <td class="memory-address hex-value">x3002</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="3">
+          <td class="memory-address hex-value">x3003</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="4">
+          <td class="memory-address hex-value">x3004</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="5">
+          <td class="memory-address hex-value">x3005</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="6">
+          <td class="memory-address hex-value">x3006</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="7">
+          <td class="memory-address hex-value">x3007</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="8">
+          <td class="memory-address hex-value">x3008</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="9">
+          <td class="memory-address hex-value">x3009</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="10">
+          <td class="memory-address hex-value">x300A</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="11">
+          <td class="memory-address hex-value">x300B</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="12">
+          <td class="memory-address hex-value">x300C</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="13">
+          <td class="memory-address hex-value">x300D</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="14">
+          <td class="memory-address hex-value">x300E</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        <tr id="memory-cell" data-cell-row="15">
+          <td class="memory-address hex-value">x300F</td><td class="memory-label"></td><td class="memory-hex hex-value">x0000</td><td class="memory-instruction">NOP</td>
+        </tr>
+        </tbody>
+      </table>
+      <div id="scroll-container">
+        <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-chevron-up"></span></button>
+        <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-chevron-down"></span></button>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <h1>Execution</h2>
+      <div class="btn-group" role="group">
+        <button type="button" class="btn btn-default">Continue</button>
+        <button type="button" class="btn btn-default">Step</button>
+        <button type="button" class="btn btn-default">Next</button>
+        <button type="button" class="btn btn-default">Finish</button>
+      </div>
+      <div class="row register-row" id="registers-primary">
+        <div class="col-xs-6 col-sm-3" data-register="R0"><span class="register-name">R0</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R1"><span class="register-name">R1</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R2"><span class="register-name">R2</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R3"><span class="register-name">R3</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R4"><span class="register-name">R4</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R5"><span class="register-name">R5</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R6"><span class="register-name">R6</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R7"><span class="register-name">R7</span>: <span class="register-value hex-value">x0000</span></div>
+      </div>
+      <div class="row"><div class="col-xs-0"></div></div>
+      <div class="row register-row" id="registers-special">
+        <div class="col-xs-12 col-sm-3" data-register="PC"><span class="register-name">PC</span>: <span class="register-value hex-value">x3000</span></div>
+        <div class="col-xs-12 col-sm-3" data-register="IR"><span class="register-name">IR</span>: <span class="register-value hex-value">x1401</span></div>
+        <div class="col-xs-12 col-sm-3" data-register="PSR"><span class="register-name">PSR</span>: <span class="register-value hex-value">x0000</span></div>
+      </div>
+    </div>
+    <div class="col-xs-12">
+      <h1>Console</h1>
+    </div>
+  </div>
+</div>
+
+</body>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+
+</html>
