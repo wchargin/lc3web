@@ -1,14 +1,10 @@
 $(document).ready(function() {
-    var memoryRows = Array(16);
-    var memory = Array(65536);
-    var pc = 0x3000;
-    var breakpoints = [0x3006];
+    var lc3 = new LC3();
+    window.lc3 = lc3;
 
-    var getMemory = function(address) {
-        var data = memory[address];
-        return data === undefined ? 0 : data;
-    };
-    memory[0x3000] = 0x1401;
+    var currentMemoryLocation = lc3.pc;
+    var memoryRows = Array(16);
+    var breakpoints = [];
 
     var toHexString = function(value) {
         var hex = value.toString(16).toUpperCase();
@@ -19,23 +15,42 @@ $(document).ready(function() {
         return 'x' + hex;
     };
 
+    // Parses a decimal or hexadecimal value
     var parseNumber = function(value) {
+        value = value.toLowerCase();
         if (value.length == 0) {
             return NaN;
         }
-        if (value[0] == 'x') {
-            return parseInt(value.slice(1), 16);
+        if (value[0] === 'x') {
+            var hexDigits = value.slice(1);
+            if (hexDigits.match(/[^0-9a-f]/)) {
+                return NaN;
+            }
+            return parseInt(hexDigits, 16);
         } else {
+            if (value.match(/[^0-9]/)) {
+                return NaN;
+            }
             return parseInt(value);
         }
     };
 
-    var updateHexValueTooltip = function(element) {
-        var hex = $(element).text().replace(/[^0-9A-Fa-f]/g, '');
+    /*
+     * Gets the tooltip text for $(this), a .hex-value item.
+     */
+    var hexValueTooltipTitle = function() {
+        if ($(this).hasClass('hex-no-tooltip')) {
+            return;
+        }
+        var signed = $(this).hasClass('hex-signed');
+        var hex = $(this).text().replace(/[^0-9A-Fa-f]/g, '');
         var num = parseInt("0x" + hex);
-        var titleText = "decimal " + num;
-        $(element).attr("title", titleText);
-        $(element).tooltip('fixTitle');
+        if (signed) {
+            num = toInt16(num);
+        }
+        var numString = num.toString().replace('-', '\u2212');
+        var titleText = "decimal " + numString;
+        return titleText;
     };
 
     // Add the memory addresses
@@ -57,21 +72,48 @@ $(document).ready(function() {
         };
         $row.append(createCell(['memory-address', 'hex-value'], toHexString(i + 0x3000)));
         $row.append(createCell(['memory-label'], ''));
-        $row.append(createCell(['memory-hex', 'hex-value'], 'x0000'));
+        $row.append(createCell(['memory-hex', 'hex-value', 'hex-signed', 'hex-editable'], 'x0000'));
         $row.append(createCell(['memory-instruction'], 'NOP'));
         $cellTableBody.append($row);
     }
 
     var updateMemory = function(startPosition) {
+        // If the user inputs, e.g., 0xFFFF, that's a valid value,
+        // but the remaining fifteen would not be. Clamp them out.
+        var max = lc3.memory.length - memoryRows.length;
+        if (startPosition >= max) {
+            startPosition = max;
+            $('#mem-scroll-down').prop('disabled', true);
+        } else {
+            $('#mem-scroll-down').prop('disabled', false);
+        }
+        if (startPosition <= 0) {
+            startPosition = 0;
+            $('#mem-scroll-up').prop('disabled', true);
+        } else {
+            $('#mem-scroll-up').prop('disabled', false);
+        }
+        currentMemoryLocation = startPosition;
+
         for (var i = 0; i < memoryRows.length; i++) {
             var address = i + startPosition;
-            var data = getMemory(address);
+            var data = lc3.getMemory(address);
             var $row = $('.memory-cell[data-cell-number="' + i + '"]');
-            $row.find('span.memory-address').text(toHexString(address));
-            $row.find('span.memory-label').text("TODO");
-            $row.find('span.memory-hex').text(toHexString(data));
-            $row.find('span.memory-instruction').text("TODO");
-            if (pc === address) {
+
+            var cellAddress = $row.find('span.memory-address');
+            var cellLabel = $row.find('span.memory-label');
+            var cellHex = $row.find('span.memory-hex');
+            var cellInstruction = $row.find('span.memory-instruction');
+
+            cellAddress.text(toHexString(address));
+            cellLabel.text('TODO');
+            cellHex.text(toHexString(data));
+            cellInstruction.text('TODO');
+
+            //updateHexValueTooltip(cellAddress);
+            //updateHexValueTooltip(cellHex);
+
+            if (lc3.pc === address) {
                 $row.addClass('address-pc');
             } else {
                 $row.removeClass('address-pc');
@@ -83,17 +125,137 @@ $(document).ready(function() {
             }
         }
     };
+    lc3.memory[0x3001] = 0xFFFF;
 
     $(".hex-value").each(function() {
         var $el = $(this);
-        updateHexValueTooltip($el);
+        //updateHexValueTooltip($el);
+    });
+    updateMemory(currentMemoryLocation);
+
+    var performJumpTo = function() {
+        var invalid = $('#error-address-invalid');
+        var bounds = $('#error-address-bounds');
+
+        var text = $('#mem-jumpto').val().trim();
+        if (text.length === 0) {
+            // Cleared the field; nothing to do.
+            invalid.slideUp();
+            bounds.slideUp();
+            return;
+        }
+        var address = parseNumber(text);
+
+        if (!isNaN(address)) {
+            invalid.slideUp();
+            if (address < lc3.memory.length) {
+                updateMemory(address);
+                bounds.slideUp();
+            } else {
+                bounds.slideDown();
+            }
+        } else {
+            // Don't complain if they're about to enter a hex address.
+            if (text.toLowerCase() !== 'x') {
+                invalid.slideDown();
+            }
+        }
+        $('#mem-jumpto').focus();
+    };
+    $('#mem-jumpto-activate').click(function() {
+        $('#mem-jumpto').focus();
+    });
+    $('#mem-jumpto').on('input', performJumpTo);
+    $('#mem-jumpto-go').click(performJumpTo);
+
+    $('#mem-jump-pc').click(function() {
+        updateMemory(lc3.pc);
+        $(this).blur();
+    });
+    $('#mem-scroll-up').click(function() {
+        updateMemory(currentMemoryLocation - 1);
+        $(this).blur();
+    });
+    $('#mem-scroll-down').click(function() {
+        updateMemory(currentMemoryLocation + 1);
+        $(this).blur();
     });
 
-    $('#memory-jumpto').on('input', function() {
-        var text = $(this).val();
-        var address = parseNumber(text);
-        if (!isNaN(address)) {
-            updateMemory(address);
-        }
+    $('.hex-editable').popover({
+        html: true,
+        title: 'Edit value',
+        content: function() {
+            var $oldThis = $(this);
+
+            // Create a little form for the popover content
+            var $container = $('<div>').addClass('hex-edit-popover text-center');
+
+            // Input bar contains the text field and status indicator.
+            var $inputBar = $('<div>').addClass('input-group').appendTo($container);
+            var $icon = $('<span>').addClass('glyphicon glyphicon-pencil');
+            var $iconSpan = $('<span>')
+                            .addClass('input-group-addon')
+                            .append($icon)
+                            .appendTo($inputBar);
+            var $field = $('<input>')
+                         .prop('type', 'text')
+                         .addClass('hex-value')
+                         .addClass('form-control')
+                         .val($(this).text())
+                         .appendTo($inputBar);
+
+            // List of errors.
+            var $ul =  $('<ul>').appendTo($('<div>').appendTo($container));
+            var $msgValid = $('<li>').text('Invalid number').appendTo($ul);
+            var $msgRange = $('<li>').text('Value out of range').appendTo($ul);
+
+            // Buttons to submit or cancel.
+            var $buttons = $('<div>').addClass('btn-group').appendTo($container);
+            var $cancel = $('<button>').addClass('btn').appendTo($buttons)
+                .append($('<span>').addClass('glyphicon glyphicon-remove'))
+                .click(function() { $oldThis.popover('hide'); });
+            var $submit = $('<button>').addClass('btn btn-primary').appendTo($buttons)
+                .append($('<span>').addClass('glyphicon glyphicon-ok'));
+
+            // Handler to validate when changed
+            $field.on('input', function() {
+                var text = $(this).val();
+                var num = parseNumber(text);
+
+                // Determine: number valid? number within valid range?
+                var valid = !isNaN(num);
+                var inRange = num < 0x10000 && num >= 0;
+                var okay = valid && inRange;
+
+                // Update (show/hide) error messages
+                if (!valid) {
+                    $msgValid.slideDown('fast');
+                } else {
+                    $msgValid.slideUp('fast');
+                }
+                if (valid && !inRange) {
+                    $msgRange.slideDown('fast');
+                } else {
+                    $msgRange.slideUp('fast');
+                }
+
+                // Update status indicator
+                var goodClass = 'glyphicon-pencil';
+                var badClass = 'glyphicon-exclamation-sign';
+                $icon.addClass(okay ? goodClass : badClass);
+                $icon.removeClass(okay ? badClass : goodClass);
+
+                // Update submit button
+                $submit.prop('disabled', !okay);
+            });
+
+            return $container;
+        },
+        trigger: 'click'
     });
+
+    $('.hex-value').tooltip( { title: hexValueTooltipTitle });
+
+    $('#container-wait').slideUp();
+    $('#container-main').fadeIn();
 });

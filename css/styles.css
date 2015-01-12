@@ -29,3 +29,19 @@
 {
     font-family: monospace;
 }
+
+/* alerts in the static DOM, made visible by JS */
+.hidden-alert
+{
+    display: none;
+}
+
+.hex-edit-popover .input-group {
+    margin-bottom: 1em;
+}
+.hex-edit-popover li {
+    display: none;
+}
+.hex-edit-popover .btn-group {
+    text-align: center;
+}

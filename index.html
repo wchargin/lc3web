@@ -34,10 +34,19 @@
   </div>
 </nav>
 
-<div class="container">
+<div class="container" id="container-wait">
   <div class="row">
     <div class="col-md-12">
-      <h1>Execution</h1>
+      <div class="alert alert-info" role="alert" id="wait-alert">
+        The LC-3 is initializing.
+        Please wait&hellip;
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container" id="container-main" style="display: none;">
+    <div class="col-md-12">
+      <h1>Status</h1>
       <div class="btn-group" role="group">
         <button type="button" class="btn btn-default">Continue</button>
         <button type="button" class="btn btn-default">Step</button>
@@ -45,14 +54,14 @@
         <button type="button" class="btn btn-default">Finish</button>
       </div>
       <div class="row register-row" id="registers-primary">
-        <div class="col-xs-6 col-sm-3" data-register="R0"><span class="register-name">R0</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R1"><span class="register-name">R1</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R2"><span class="register-name">R2</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R3"><span class="register-name">R3</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R4"><span class="register-name">R4</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R5"><span class="register-name">R5</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R6"><span class="register-name">R6</span>: <span class="register-value hex-value">x0000</span></div>
-        <div class="col-xs-6 col-sm-3" data-register="R7"><span class="register-name">R7</span>: <span class="register-value hex-value">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R0"><span class="register-name">R0</span>: <span class="register-value hex-value hex-signed">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R1"><span class="register-name">R1</span>: <span class="register-value hex-value hex-signed">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R2"><span class="register-name">R2</span>: <span class="register-value hex-value hex-signed">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R3"><span class="register-name">R3</span>: <span class="register-value hex-value hex-signed">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R4"><span class="register-name">R4</span>: <span class="register-value hex-value hex-signed">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R5"><span class="register-name">R5</span>: <span class="register-value hex-value hex-signed">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R6"><span class="register-name">R6</span>: <span class="register-value hex-value hex-signed">x0000</span></div>
+        <div class="col-xs-6 col-sm-3" data-register="R7"><span class="register-name">R7</span>: <span class="register-value hex-value hex-signed">x0000</span></div>
       </div>
       <div class="row"><div class="col-xs-0"></div></div>
       <div class="row register-row" id="registers-special">
@@ -63,9 +72,21 @@
     </div>
     <div class="col-md-6">
       <h1>Memory</h1>
+      <div class="alert alert-danger hidden-alert" role="alert" id="error-address-invalid">
+        <strong>Whoops!</strong>
+        That memory address is <strong>invalid</strong>.
+        Hexadecimal addresses must begin with the letter <span class="hex-value hex-no-tooltip">x</span>.
+        All other addresses must be decimal.
+      </div>
+      <div class="alert alert-danger hidden-alert" role="alert" id="error-address-bounds">
+        <strong>Whoops!</strong>
+        The memory address you've entered is <strong>out of bounds</strong>.
+        Memory addresses must be within <span class="hex-value">x0000</span> and <span class="hex-value hex-signed">xFFFF</span>, inclusive.
+      </div>
       <div class="input-group">
-        <span class="input-group-addon"><label for="memory-jumpto" class="glyphicon glyphicon-search"></label></span>
-        <input type="text" id="memory-jumpto" class="form-control" placeholder="Jump to address">
+        <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-activate"><span class="glyphicon glyphicon-search"></span></button></span>
+        <input type="text" id="mem-jumpto" class="form-control" placeholder="Jump to address">
+        <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-go"><span class="glyphicon glyphicon-arrow-right"></span></button></span>
       </div>
       <table class="table table" id="memory-table">
         <thead>
@@ -76,103 +97,7 @@
             <th>Instruction</th>
           </tr>
         </thead>
-        <tbody>
-        <!--
-        <tr class="memory-cell" data-cell-row="0">
-          <td><span class="memory-address hex-value">x3000</span></td><td><span class="memory-label"></span></td><td><span class="memory-hex hex-value">x1401</span></td><td><span class="memory-instruction">ADD  R2, R0, R1</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="1">
-          <td><span class="memory-address hex-value">x3001</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="2">
-          <td><span class="memory-address hex-value">x3002</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="3">
-          <td><span class="memory-address hex-value">x3003</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="4">
-          <td><span class="memory-address hex-value">x3004</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="5">
-          <td><span class="memory-address hex-value">x3005</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="6">
-          <td><span class="memory-address hex-value">x3006</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="7">
-          <td><span class="memory-address hex-value">x3007</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="8">
-          <td><span class="memory-address hex-value">x3008</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="9">
-          <td><span class="memory-address hex-value">x3009</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="10">
-          <td><span class="memory-address hex-value">x300A</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="11">
-          <td><span class="memory-address hex-value">x300B</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="12">
-          <td><span class="memory-address hex-value">x300C</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="13">
-          <td><span class="memory-address hex-value">x300D</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="14">
-          <td><span class="memory-address hex-value">x300E</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        <tr class="memory-cell" data-cell-row="15">
-          <td><span class="memory-address hex-value">x300F</span></td>
-          <td><span class="memory-label"></span></td>
-          <td><span class="memory-hex hex-value">x0000</span></td>
-          <td><span class="memory-instruction">NOP</span></td>
-        </tr>
-        -->
-        </tbody>
+        <tbody></tbody>
       </table>
       <div class="row" id="scroll-container">
         <div class="col-xs-12 col-sm-6">
@@ -212,6 +137,7 @@
 <!-- Placed at the end of the document so the pages load faster -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script src="js/lc3_core.js"></script>
 <script src="js/lc3_ui.js"></script>
 
 </body>
