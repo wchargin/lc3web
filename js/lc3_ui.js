@@ -72,8 +72,7 @@ $(document).ready(function() {
     /*
      *
      */
-    var updateValue = function($el, value) {
-        var linkage = $el.data('edit-linkage');
+    var updateValue = function(linkage, value) {
         var type = linkage.type;
         if (type === 'address') {
             var address = linkage.address;
@@ -165,6 +164,7 @@ $(document).ready(function() {
             var editLinkage = {
                 type: 'address',
                 address: address,
+                name: toHexString(address),
             };
             cellHex.data('edit-linkage', editLinkage);
 
@@ -237,9 +237,12 @@ $(document).ready(function() {
 
     $('.hex-editable').popover({
         html: true,
-        title: 'Edit value',
+        title: function() {
+            return 'Edit value of ' + $(this).data('edit-linkage').name;
+        },
         content: function() {
             var $oldThis = $(this);
+            var linkage = $(this).data('edit-linkage');
 
             // Create a little form for the popover content
             var $container = $('<div>').addClass('hex-edit-popover');
@@ -275,7 +278,7 @@ $(document).ready(function() {
                 .append($('<span>').addClass('glyphicon glyphicon-ok'))
                 .click(function() {
                     $oldThis.popover('hide');
-                    updateValue($oldThis, parseNumber($field.val()));
+                    updateValue(linkage, parseNumber($field.val()));
                 });
 
             // Handler to validate when changed
