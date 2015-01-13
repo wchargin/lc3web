@@ -67,7 +67,7 @@ LC3.prototype.nextInstruction = function() {
 };
 LC3.prototype.fetch = function() {
     this.ir = this.getMemory(this.pc);
-    this.pc++;
+    this.setRegister('pc', this.pc + 1);
 };
 LC3.prototype.decode = function(instruction) {
     // We'll augment this object depending on the opcode.

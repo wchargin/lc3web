@@ -1,8 +1,8 @@
 $(document).ready(function() {
     var lc3 = new LC3();
     window.lc3 = lc3; // for ease of debugging
-    lc3.labelToAddress['START'] = 0x3000;
-    lc3.addressToLabel[0x3000] = 'START';
+
+    lc3.setLabel(0x3000, 'START');
 
     /*
      * Address of the top value in the table.
@@ -13,6 +13,12 @@ $(document).ready(function() {
      * Array of the <tr> DOM elements used to display memory.
      */
     var memoryRows = Array(16);
+
+    /*
+     * Array mapping register IDs (e.g., 3 or 'pc') to
+     * the span.hex-value elements used in their display.
+     */
+    var registers = {};
 
     /*
      * Array of the addresses with breakpoints assigned.
@@ -88,13 +94,66 @@ $(document).ready(function() {
                 $row.find('.memory-hex').text(LC3Util.toHexString(ev.newValue));
             }
         } else if (type === 'regset') {
+            if (ev.register === 'pc') {
+                // We might have to change the highlighting of rows.
+                refreshMemoryDisplay();
+            }
+            console.log(registers[ev.register]);
+            console.log(ev.newValue);
+            registers[ev.register].text(LC3Util.toHexString(ev.newValue));
         } else if (type === 'labelset' || type === 'labelunset') {
             // Easiest to just reset the display.
-            displayMemory(currentMemoryLocation);
+            refreshMemoryDisplay();
         } else {
             // handle this?
         }
     });
+
+    // Add the registers
+    var $registersPrimary = $('#registers-primary');
+    for (var i = 0; i < lc3.r.length; i++) {
+        var name = 'R' + i;
+        var editLinkage = {
+            type: 'register',
+            register: i,
+            name: name
+        };
+        var $row = $('<div>')
+            .addClass('col-xs-6 col-sm-3');
+        var $name = $('<span>')
+            .addClass('register-name')
+            .text(name);
+        var $value = $('<span>')
+            .addClass('register-value hex-value hex-signed hex-editable')
+            .text(LC3Util.toHexString(lc3.getRegister(i)))
+            .data('edit-linkage', editLinkage);
+        $row.append($name).append(': ').append($value);
+        $registersPrimary.append($row);
+        registers[i] = $value;
+    }
+    var $registersSpecial = $('#registers-special');
+    for (var i = 0; i < lc3.specialRegisters.length; i++) {
+        var register = lc3.specialRegisters[i];
+        var name = register.toUpperCase();
+        var editLinkage = {
+            type: 'register',
+            register: register,
+            name: name
+        };
+        var $row = $('<div>')
+            .addClass('col-xs-12 col-sm-3');
+        var $name = $('<span>')
+            .addClass('register-name')
+            .text(name);
+        var $value = $('<span>')
+            // note: special registers are unsigned
+            .addClass('register-value hex-value hex-editable')
+            .text(LC3Util.toHexString(lc3.getRegister(register)))
+            .data('edit-linkage', editLinkage);
+        $row.append($name).append(': ').append($value);
+        $registersSpecial.append($row);
+        registers[register] = $value;
+    }
 
     // Add the memory addresses
     var $cellTableBody = $('#memory-table tbody');
@@ -172,6 +231,9 @@ $(document).ready(function() {
                 $row.removeClass('address-breakpoint');
             }
         }
+    };
+    var refreshMemoryDisplay = function() {
+        displayMemory(currentMemoryLocation);
     };
     lc3.memory[0x3000] = 0x1401;
     lc3.setRegister(0, 42);
