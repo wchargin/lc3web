@@ -61,7 +61,9 @@ $(document).ready(function() {
             num = LC3Util.toInt16(num);
         }
         var numString = num.toString().replace('-', '\u2212');
-        var titleText = "decimal " + numString;
+        var prefix = 'decimal ';
+        var suffix = signed ? ' (signed)' : ' (unsigned)';
+        var titleText = prefix + numString + suffix;
         return titleText;
     };
 
@@ -160,7 +162,6 @@ $(document).ready(function() {
     for (var i = 0; i < memoryRows.length; i++) {
         var $row = $('<tr>');
         $row.addClass('memory-cell');
-        $row.attr('data-cell-number', i.toString());
         var createCell = function(classes, value) {
             var $cell = $('<td>');
             var $contents = $('<span>');
@@ -329,7 +330,8 @@ $(document).ready(function() {
                          .addClass('hex-value')
                          .addClass('form-control')
                          .val($(this).text())
-                         .appendTo($inputBar);
+                         .appendTo($inputBar)
+                         .ready(function() { $(this).focus(); });
 
             // List of errors.
             var $ul =  $('<ul>').appendTo($('<div>').appendTo($container));
