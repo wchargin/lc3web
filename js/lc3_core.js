@@ -166,13 +166,13 @@ LC3.prototype.decode = function(instruction) {
             op.dr = bits911;
             op.mode = 'baseOffset';
             op.baseR = bits68;
-            op.offset = LC3Util.signExtend16(base05, 6);
+            op.offset = LC3Util.signExtend16(bits05, 6);
             break;
         case 14: // LEA
             op.opname = 'LEA';
             op.dr = bits911;
             op.mode = 'pcOffset';
-            op.offset = LC3Util.signExtend16(bits08);
+            op.offset = LC3Util.signExtend16(bits08, 9);
             break;
         case 9: // NOT
             op.opname = 'NOT';
@@ -384,14 +384,14 @@ LC3.prototype.instructionToString = function(inAddress, instruction) {
         case 14: // LEA
             return prefix + [reg(op.dr), this.formatAddress(address)].join(', ');
         case 6:  // LDR
-            return prefix + [reg(op.dr), reg(op.br), LC3Util.toHexString(op.offset)].join(', ');
+            return prefix + [reg(op.dr), reg(op.baseR), '#' + op.offset].join(', ');
         case 8: // RTI
             return op.opname;
         case 3:  // ST
         case 11: // STI
             return prefix + [reg(op.sr), this.formatAddress(address)].join(', ');
         case 7:  // STR
-            return prefix + [reg(op.sr), reg(op.br), LC3Util.toHexString(op.offset)].join(', ');
+            return prefix + [reg(op.sr), reg(op.baseR), '#' + op.offset].join(', ');
         case 15: // TRAP
             var namedTrap = this.namedTrapVectors[address];
             if (namedTrap !== undefined) {

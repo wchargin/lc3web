@@ -235,7 +235,16 @@ $(document).ready(function() {
     var refreshMemoryDisplay = function() {
         displayMemory(currentMemoryLocation);
     };
-    lc3.memory[0x3000] = 0x1401;
+    lc3.memory[0x3000] = 0x5260;
+    lc3.memory[0x3001] = 0x5920;
+    lc3.memory[0x3002] = 0x192A;
+    lc3.memory[0x3003] = 0xE4FC;
+    lc3.memory[0x3004] = 0x6680;
+    lc3.memory[0x3005] = 0x14A1;
+    lc3.memory[0x3006] = 0x1243;
+    lc3.memory[0x3007] = 0x193F;
+    lc3.memory[0x3008] = 0x03FB;
+    lc3.memory[0x3009] = 0xF025;
     lc3.setRegister(0, 42);
     lc3.setRegister(1, 68);
 
@@ -281,6 +290,7 @@ $(document).ready(function() {
         }
         if (isInvalid) {
             invalid.slideDown();
+            bounds.slideUp();
         } else {
             invalid.slideUp();
         }
