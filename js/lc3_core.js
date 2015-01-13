@@ -43,7 +43,68 @@ var LC3 = function() {
     // Exclusive upper bound for normal memory
     // Memory address 0xFE00 and up are mapped to devices
     this.maxStandardMemory = 0xFE00;
-}
+};
+
+/*
+ * Links a label with an address and notifies listeners.
+ */
+LC3.prototype.setLabel = function(address, label) {
+    // Unlink a previous label to the same address or of the same name.
+    this.unsetLabelGivenAddress(address);
+    this.unsetLabelGivenName(label);
+
+    // Set up the new label and notify listeners.
+    this.labelToAddress[label] = address;
+    this.addressToLabel[address] = label;
+    var ev = {
+        type: 'labelset',
+        address: address,
+        label: label,
+    };
+    this.notifyListeners(ev);
+};
+
+/*
+ * Deletes a label at the given address.
+ * Returns true if the given label existed, else false.
+ */
+LC3.prototype.unsetLabelGivenAddress = function(address) {
+    var label = this.addressToLabel[address];
+    var hasLabel = (label !== undefined);
+    if (!hasLabel) {
+        return false;
+    }
+    this.unsetLabel_internal_(address, label);
+    return true;
+};
+
+/*
+ * Deletes a label with the given name.
+ * Returns true if the given label existed, else false.
+ */
+LC3.prototype.unsetLabelGivenName = function(label) {
+    var address = this.labelToAddress[label];
+    var hasLabel = (address !== undefined);
+    if (!hasLabel) {
+        return false;
+    }
+    this.unsetLabel_internal_(address, label);
+    return true;
+};
+
+/*
+ * Internal command to unset a label at the given name and address.
+ */
+LC3.prototype.unsetLabel_internal_ = function(address, label) {
+    delete this.addressToLabel[address];
+    delete this.labelToAddress[label];
+    var ev = {
+        type: 'labelunset',
+        address: address,
+        label: label,
+    };
+    this.notifyListeners(ev);
+};
 
 /*
  * Decodes an instruction to an object containing extractable fields.

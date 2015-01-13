@@ -100,6 +100,9 @@ $(document).ready(function() {
                 $row.find('.memory-hex').text(toHexString(ev.newValue));
             }
         } else if (type === 'regset') {
+        } else if (type === 'labelset' || type === 'labelunset') {
+            // Easiest to just reset the display.
+            displayMemory(currentMemoryLocation);
         } else {
             // handle this?
         }
