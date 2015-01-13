@@ -52,7 +52,7 @@ $(document).ready(function() {
         var hex = $(this).text().replace(/[^0-9A-Fa-f]/g, '');
         var num = parseInt("0x" + hex);
         if (signed) {
-            num = toInt16(num);
+            num = LC3Util.toInt16(num);
         }
         var numString = num.toString().replace('-', '\u2212');
         var titleText = "decimal " + numString;
@@ -173,7 +173,9 @@ $(document).ready(function() {
             }
         }
     };
-    lc3.memory[0x3001] = 0xFFFF;
+    lc3.memory[0x3000] = 0x1401;
+    lc3.setRegister(0, 42);
+    lc3.setRegister(1, 68);
 
     $(".hex-value").each(function() {
         var $el = $(this);
@@ -196,7 +198,6 @@ $(document).ready(function() {
         var isInvalid = false;
         if (isNaN(address)) {
             // Perhaps it's the name of a label?
-                console.log(address);
             var labelAddress = lc3.labelToAddress[text];
             if (labelAddress !== undefined) {
                 displayMemory(labelAddress);
@@ -326,6 +327,8 @@ $(document).ready(function() {
     });
 
     $('.hex-value').tooltip( { title: hexValueTooltipTitle });
+
+    $('#control-step').click(function() { lc3.nextInstruction(); });
 
     $('#container-wait').slideUp();
     $('#container-main').fadeIn();

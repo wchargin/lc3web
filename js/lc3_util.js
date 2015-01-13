@@ -17,11 +17,16 @@ window.LC3Util = {
      * to a 16-bit signed integer.
      */
     toInt16: function(n) {
-        n = n & 0xFFFF;
+        n = (n % 0x10000) & 0xFFFF;
         if (n & 0x8000) {
             return n - 0x10000;
         }
         return n;
+    },
+
+    toUint16: function(n) {
+        var int16 = this.toInt16(n);
+        return int16 < 0 ? int16 + 0x10000 : int16;
     },
 
     /*
@@ -29,8 +34,12 @@ window.LC3Util = {
      */
     signExtend16: function(n, size) {
         var sign = (n >> (size - 1)) & 1;
-        for (var i = size; i < 16; i++) {
-            n |= (sign << i);
+        if (sign === 1) {
+            for (var i = size; i < 16; i++) {
+                n |= (1 << i);
+            }
+        } else {
+            n &= (1 << size) - 1;
         }
         return n;
     },
