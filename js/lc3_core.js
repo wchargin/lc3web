@@ -13,6 +13,17 @@ var LC3 = function() {
         this.memory[i] = 0;
     }
 
+    // Listeners for when registers, memory, etc. are changed
+    this.listeners = [];
+    this.addListener = function(callback) {
+        this.listeners.push(callback);
+    };
+    this.notifyListeners = function(e) {
+        for (var i = 0; i < this.listeners.length; i++) {
+            this.listeners[i](e);
+        }
+    };
+
     // Create and initialize standard registers (R0 to R7)
     this.r = new Array(8);
     for (var i = 0; i < this.r.length; i++) {
@@ -23,6 +34,7 @@ var LC3 = function() {
     this.pc = 0x3000;
     this.ir = 0;
     this.psr = 0x0400;
+    this.specialRegisters = ['pc', 'ir', 'psr'];
 
     this.labels = [];
 
@@ -30,42 +42,59 @@ var LC3 = function() {
     // Memory address 0xFE00 and up are mapped to devices
     this.maxStandardMemory = 0xFE00;
 
-    this.mappedIO = {
-        kbsr: 0,
-        kbdr: 0,
-        dsr: 0,
-        ddr: 0,
-        mcr: 0x7FFF
-    };
-    this.mappedAddresses = {
-        0xFE00: 'kbsr',
-        0xFE02: 'kbdr',
-        0xFE04: 'dsr',
-        0xFE06: 'ddr',
-        0xFFFE: 'mcr'
-    };
-
     // Functions to get and set memory, handling mapped memory edge cases
     this.getMemory = function(address) {
-        if (address < this.maxStandardMemory) {
-            return this.memory[address];
-        }
-        var mappedAddress = this.mappedAddresses[address];
-        if (mappedAddress !== undefined) {
-            return this.mappedIO[mappedAddress];
-        }
-        return 0;
+        return this.memory[address];
     }
     this.setMemory = function(address, data) {
-        if (address < this.maxStandardMemory) {
-            this.memory[address] = data;
-            return true;
+        var ev = {
+            type: 'memset',
+            address: address,
+            newValue: data
+        };
+        this.memory[address] = data;
+        this.notifyListeners(ev);
+    }
+
+    // Functions to get and set registers (standard or special)
+    this.getRegister = function(register) {
+        for (var i = 0; i < this.r.length; i++) {
+            if (i.toString() === register) {
+                return this.r[i];
+            }
         }
-        var mappedAddress = this.mappedAddresses[address];
-        if (mappedAddress !== undefined) {
-            this.mappedIO[mappedAddress] = data;
-            return true;
+        for (var i = 0; i < this.specialRegisters.length; i++) {
+            var name = this.specialRegisters[i];
+            if (name === register) {
+                return this[name];
+            }
+        }
+        return undefined;
+    }
+    this.setRegister = function(register, value) {
+        var ev = {
+            type: 'regset',
+            register: undefined,
+            newValue: value
+        };
+        for (var i = 0; i < this.r.length; i++) {
+            if (i.toString() === register) {
+                ev.register = i;
+                this.r[i] = value;
+                notifyListeners(ev);
+                return true;
+            }
+        }
+        for (var i = 0; i < this.specialRegisters.length; i++) {
+            var name = this.specialRegisters[i];
+            if (name === register) {
+                ev.register = name;
+                this[name] = value;
+                notifyListeners(ev);
+                return true;
+            }
         }
         return false;
     }
+
 };

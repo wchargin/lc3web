@@ -1,11 +1,25 @@
 $(document).ready(function() {
     var lc3 = new LC3();
-    window.lc3 = lc3;
+    window.lc3 = lc3; // for ease of debugging
 
+    /*
+     * Address of the top value in the table.
+     */
     var currentMemoryLocation = lc3.pc;
+
+    /*
+     * Array of the <tr> DOM elements used to display memory.
+     */
     var memoryRows = Array(16);
+
+    /*
+     * Array of the addresses with breakpoints assigned.
+     */
     var breakpoints = [];
 
+    /*
+     * Converts a number to a four-digit hexadecimal string with 'x' prefix.
+     */
     var toHexString = function(value) {
         var hex = value.toString(16).toUpperCase();
         var padLength = 4;
@@ -15,7 +29,9 @@ $(document).ready(function() {
         return 'x' + hex;
     };
 
-    // Parses a decimal or hexadecimal value
+    /*
+     * Parses a decimal or hexadecimal value, or returns NaN.
+     */
     var parseNumber = function(value) {
         value = value.toLowerCase();
         if (value.length == 0) {
@@ -53,6 +69,41 @@ $(document).ready(function() {
         return titleText;
     };
 
+    /*
+     *
+     */
+    var updateValue = function($el, value) {
+        var linkage = $el.data('edit-linkage');
+        var type = linkage.type;
+        if (type === 'address') {
+            var address = linkage.address;
+            lc3.setMemory(address, value);
+        } else if (type === 'register') {
+            var register = linkage.register;
+            lc3.setRegister(register, value);
+        } else {
+            throw new Error("Unknown linkage type: " + type);
+        }
+    };
+
+    /*
+     * Listen for memory changes.
+     */
+    lc3.addListener(function (ev) {
+        var type = ev.type;
+        if (type === 'memset') {
+            var address = ev.address;
+            var index = address - currentMemoryLocation;
+            if (0 <= index && index < memoryRows.length) {
+                var $row = memoryRows[index];
+                $row.find('.memory-hex').text(toHexString(ev.newValue));
+            }
+        } else if (type === 'regset') {
+        } else {
+            // handle this?
+        }
+    });
+
     // Add the memory addresses
     var $cellTableBody = $('#memory-table tbody');
     for (var i = 0; i < memoryRows.length; i++) {
@@ -75,9 +126,10 @@ $(document).ready(function() {
         $row.append(createCell(['memory-hex', 'hex-value', 'hex-signed', 'hex-editable'], 'x0000'));
         $row.append(createCell(['memory-instruction'], 'NOP'));
         $cellTableBody.append($row);
+        memoryRows[i] = $row;
     }
 
-    var updateMemory = function(startPosition) {
+    var displayMemory = function(startPosition) {
         // If the user inputs, e.g., 0xFFFF, that's a valid value,
         // but the remaining fifteen would not be. Clamp them out.
         var max = lc3.memory.length - memoryRows.length;
@@ -98,7 +150,7 @@ $(document).ready(function() {
         for (var i = 0; i < memoryRows.length; i++) {
             var address = i + startPosition;
             var data = lc3.getMemory(address);
-            var $row = $('.memory-cell[data-cell-number="' + i + '"]');
+            var $row = memoryRows[i];
 
             var cellAddress = $row.find('span.memory-address');
             var cellLabel = $row.find('span.memory-label');
@@ -110,8 +162,11 @@ $(document).ready(function() {
             cellHex.text(toHexString(data));
             cellInstruction.text('TODO');
 
-            //updateHexValueTooltip(cellAddress);
-            //updateHexValueTooltip(cellHex);
+            var editLinkage = {
+                type: 'address',
+                address: address,
+            };
+            cellHex.data('edit-linkage', editLinkage);
 
             if (lc3.pc === address) {
                 $row.addClass('address-pc');
@@ -129,9 +184,8 @@ $(document).ready(function() {
 
     $(".hex-value").each(function() {
         var $el = $(this);
-        //updateHexValueTooltip($el);
     });
-    updateMemory(currentMemoryLocation);
+    displayMemory(currentMemoryLocation);
 
     var performJumpTo = function() {
         var invalid = $('#error-address-invalid');
@@ -149,7 +203,7 @@ $(document).ready(function() {
         if (!isNaN(address)) {
             invalid.slideUp();
             if (address < lc3.memory.length) {
-                updateMemory(address);
+                displayMemory(address);
                 bounds.slideUp();
             } else {
                 bounds.slideDown();
@@ -169,15 +223,15 @@ $(document).ready(function() {
     $('#mem-jumpto-go').click(performJumpTo);
 
     $('#mem-jump-pc').click(function() {
-        updateMemory(lc3.pc);
+        displayMemory(lc3.pc);
         $(this).blur();
     });
     $('#mem-scroll-up').click(function() {
-        updateMemory(currentMemoryLocation - 1);
+        displayMemory(currentMemoryLocation - 1);
         $(this).blur();
     });
     $('#mem-scroll-down').click(function() {
-        updateMemory(currentMemoryLocation + 1);
+        displayMemory(currentMemoryLocation + 1);
         $(this).blur();
     });
 
@@ -188,7 +242,7 @@ $(document).ready(function() {
             var $oldThis = $(this);
 
             // Create a little form for the popover content
-            var $container = $('<div>').addClass('hex-edit-popover text-center');
+            var $container = $('<div>').addClass('hex-edit-popover');
 
             // Input bar contains the text field and status indicator.
             var $inputBar = $('<div>').addClass('input-group').appendTo($container);
@@ -210,12 +264,19 @@ $(document).ready(function() {
             var $msgRange = $('<li>').text('Value out of range').appendTo($ul);
 
             // Buttons to submit or cancel.
-            var $buttons = $('<div>').addClass('btn-group').appendTo($container);
+            var $buttons = $('<div>').addClass('btn-group');
+            $('<div>').addClass('text-center').append($buttons).appendTo($container);
             var $cancel = $('<button>').addClass('btn').appendTo($buttons)
                 .append($('<span>').addClass('glyphicon glyphicon-remove'))
-                .click(function() { $oldThis.popover('hide'); });
+                .click(function() {
+                    $oldThis.popover('hide');
+                });
             var $submit = $('<button>').addClass('btn btn-primary').appendTo($buttons)
-                .append($('<span>').addClass('glyphicon glyphicon-ok'));
+                .append($('<span>').addClass('glyphicon glyphicon-ok'))
+                .click(function() {
+                    $oldThis.popover('hide');
+                    updateValue($oldThis, parseNumber($field.val()));
+                });
 
             // Handler to validate when changed
             $field.on('input', function() {
