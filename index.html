@@ -77,6 +77,7 @@
         That memory address is <strong>invalid</strong>.
         Hexadecimal addresses must begin with the letter <span class="hex-value hex-no-tooltip">x</span>.
         All other addresses must be decimal.
+        If you're entering a label, make sure your capitalization is correct.
       </div>
       <div class="alert alert-danger hidden-alert" role="alert" id="error-address-bounds">
         <strong>Whoops!</strong>
@@ -85,7 +86,7 @@
       </div>
       <div class="input-group">
         <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-activate"><span class="glyphicon glyphicon-search"></span></button></span>
-        <input type="text" id="mem-jumpto" class="form-control" placeholder="Jump to address">
+        <input type="text" id="mem-jumpto" class="form-control" placeholder="Jump to address or label">
         <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-go"><span class="glyphicon glyphicon-arrow-right"></span></button></span>
       </div>
       <table class="table table" id="memory-table">

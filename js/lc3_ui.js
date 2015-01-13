@@ -1,6 +1,8 @@
 $(document).ready(function() {
     var lc3 = new LC3();
     window.lc3 = lc3; // for ease of debugging
+    lc3.labelToAddress['START'] = 0x3000;
+    lc3.addressToLabel[0x3000] = 'START';
 
     /*
      * Address of the top value in the table.
@@ -157,7 +159,7 @@ $(document).ready(function() {
             var cellInstruction = $row.find('span.memory-instruction');
 
             cellAddress.text(toHexString(address));
-            cellLabel.text('TODO');
+            cellLabel.text(lc3.addressToLabel[address] || '');
             cellHex.text(toHexString(data));
             cellInstruction.text('TODO');
 
@@ -200,19 +202,33 @@ $(document).ready(function() {
         }
         var address = parseNumber(text);
 
-        if (!isNaN(address)) {
-            invalid.slideUp();
+        var isInvalid = false;
+        if (isNaN(address)) {
+            // Perhaps it's the name of a label?
+                console.log(address);
+            var labelAddress = lc3.labelToAddress[text];
+            if (labelAddress !== undefined) {
+                displayMemory(labelAddress);
+            }
+            // Maybe they're about to enter a hex address?
+            else if (text.toLowerCase() === 'x') {
+                // Nothing to do, in that case. Wait patiently.
+            } else {
+                isInvalid = true;
+            }
+        } else {
+            isInvalid = false;
             if (address < lc3.memory.length) {
                 displayMemory(address);
                 bounds.slideUp();
             } else {
                 bounds.slideDown();
             }
+        }
+        if (isInvalid) {
+            invalid.slideDown();
         } else {
-            // Don't complain if they're about to enter a hex address.
-            if (text.toLowerCase() !== 'x') {
-                invalid.slideDown();
-            }
+            invalid.slideUp();
         }
         $('#mem-jumpto').focus();
     };

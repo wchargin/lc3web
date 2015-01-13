@@ -36,7 +36,9 @@ var LC3 = function() {
     this.psr = 0x0400;
     this.specialRegisters = ['pc', 'ir', 'psr'];
 
-    this.labels = [];
+    // Dictionaries for linking addresses and labels
+    this.labelToAddress = {};
+    this.addressToLabel = {};
 
     // Exclusive upper bound for normal memory
     // Memory address 0xFE00 and up are mapped to devices
