@@ -1,11 +1,3 @@
-var toInt16 = function(n) {
-    n = n & 0xFFFF;
-    if (n & 0x8000) {
-        return n - 0x10000;
-    }
-    return n;
-};
-
 var LC3 = function() {
     // Create and initialize memory
     this.memory = new Array(0x10000);

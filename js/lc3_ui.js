@@ -20,18 +20,6 @@ $(document).ready(function() {
     var breakpoints = [];
 
     /*
-     * Converts a number to a four-digit hexadecimal string with 'x' prefix.
-     */
-    var toHexString = function(value) {
-        var hex = value.toString(16).toUpperCase();
-        var padLength = 4;
-        if (hex.length < padLength) {
-            hex = (Array(padLength - hex.length + 1).join('0')) + hex;
-        }
-        return 'x' + hex;
-    };
-
-    /*
      * Parses a decimal or hexadecimal value, or returns NaN.
      */
     var parseNumber = function(value) {
@@ -97,7 +85,7 @@ $(document).ready(function() {
             var index = address - currentMemoryLocation;
             if (0 <= index && index < memoryRows.length) {
                 var $row = memoryRows[index];
-                $row.find('.memory-hex').text(toHexString(ev.newValue));
+                $row.find('.memory-hex').text(LC3Util.toHexString(ev.newValue));
             }
         } else if (type === 'regset') {
         } else if (type === 'labelset' || type === 'labelunset') {
@@ -125,7 +113,7 @@ $(document).ready(function() {
             $cell.append($contents);
             return $cell;
         };
-        $row.append(createCell(['memory-address', 'hex-value'], toHexString(i + 0x3000)));
+        $row.append(createCell(['memory-address', 'hex-value'], LC3Util.toHexString(i + 0x3000)));
         $row.append(createCell(['memory-label'], ''));
         $row.append(createCell(['memory-hex', 'hex-value', 'hex-signed', 'hex-editable'], 'x0000'));
         $row.append(createCell(['memory-instruction'], 'NOP'));
@@ -161,15 +149,15 @@ $(document).ready(function() {
             var cellHex = $row.find('span.memory-hex');
             var cellInstruction = $row.find('span.memory-instruction');
 
-            cellAddress.text(toHexString(address));
+            cellAddress.text(LC3Util.toHexString(address));
             cellLabel.text(lc3.addressToLabel[address] || '');
-            cellHex.text(toHexString(data));
+            cellHex.text(LC3Util.toHexString(data));
             cellInstruction.text('TODO');
 
             var editLinkage = {
                 type: 'address',
                 address: address,
-                name: toHexString(address),
+                name: LC3Util.toHexString(address),
             };
             cellHex.data('edit-linkage', editLinkage);
 
