@@ -100,8 +100,6 @@ $(document).ready(function() {
                 // We might have to change the highlighting of rows.
                 refreshMemoryDisplay();
             }
-            console.log(registers[ev.register]);
-            console.log(ev.newValue);
             registers[ev.register].text(LC3Util.toHexString(ev.newValue));
         } else if (type === 'labelset' || type === 'labelunset') {
             // Easiest to just reset the display.
@@ -330,8 +328,7 @@ $(document).ready(function() {
                          .addClass('hex-value')
                          .addClass('form-control')
                          .val($(this).text())
-                         .appendTo($inputBar)
-                         .ready(function() { $(this).focus(); });
+                         .appendTo($inputBar);
 
             // List of errors.
             var $ul =  $('<ul>').appendTo($('<div>').appendTo($container));
@@ -341,17 +338,21 @@ $(document).ready(function() {
             // Buttons to submit or cancel.
             var $buttons = $('<div>').addClass('btn-group');
             $('<div>').addClass('text-center').append($buttons).appendTo($container);
+
+            var doCancel = function() {
+                $oldThis.popover('hide');
+            };
+            var doSubmit = function() {
+                $oldThis.popover('hide');
+                updateValue(linkage, parseNumber($field.val()));
+            };
+
             var $cancel = $('<button>').addClass('btn').appendTo($buttons)
                 .append($('<span>').addClass('glyphicon glyphicon-remove'))
-                .click(function() {
-                    $oldThis.popover('hide');
-                });
+                .click(doCancel);
             var $submit = $('<button>').addClass('btn btn-primary').appendTo($buttons)
                 .append($('<span>').addClass('glyphicon glyphicon-ok'))
-                .click(function() {
-                    $oldThis.popover('hide');
-                    updateValue(linkage, parseNumber($field.val()));
-                });
+                .click(doSubmit);
 
             // Handler to validate when changed
             $field.on('input', function() {
@@ -383,11 +384,22 @@ $(document).ready(function() {
 
                 // Update submit button
                 $submit.prop('disabled', !okay);
+            }).keydown(function(e) {
+                if (e.keyCode === 13) { // Enter
+                    $submit.click();
+                }
             });
 
             return $container;
         },
         trigger: 'click'
+    }).on('shown.bs.popover', function() {
+        // Focus input field when the popup is ready.
+        // The DOM created is like this:
+        //   <span class=".hex-editable ...">$(this);</span>
+        //   <div class="popover...">...<input...></div>
+        // so we can use a plus-selector to find the input.
+        $(this).find('+ div input').focus();
     });
 
     $('.hex-value').tooltip( { title: hexValueTooltipTitle });
