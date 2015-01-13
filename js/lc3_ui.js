@@ -94,6 +94,7 @@ $(document).ready(function() {
             if (0 <= index && index < memoryRows.length) {
                 var $row = memoryRows[index];
                 $row.find('.memory-hex').text(LC3Util.toHexString(ev.newValue));
+                $row.find('.memory-instruction').text(lc3.instructionAddressToString(address));
             }
         } else if (type === 'regset') {
             if (ev.register === 'pc') {
@@ -210,7 +211,7 @@ $(document).ready(function() {
             cellAddress.text(LC3Util.toHexString(address));
             cellLabel.text(lc3.addressToLabel[address] || '');
             cellHex.text(LC3Util.toHexString(data));
-            cellInstruction.text('TODO');
+            cellInstruction.text(lc3.instructionAddressToString(address));
 
             var editLinkage = {
                 type: 'address',

@@ -3,9 +3,9 @@ window.LC3Util = {
     /*
      * Converts a number to a four-digit hexadecimal string with 'x' prefix.
      */
-    toHexString: function(value) {
+    toHexString: function(value, padLength) {
         var hex = value.toString(16).toUpperCase();
-        var padLength = 4;
+        padLength = padLength || 4;
         if (hex.length < padLength) {
             hex = (Array(padLength - hex.length + 1).join('0')) + hex;
         }
@@ -41,6 +41,6 @@ window.LC3Util = {
         } else {
             n &= (1 << size) - 1;
         }
-        return n;
+        return this.toInt16(n);
     },
 };

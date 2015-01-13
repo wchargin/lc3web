@@ -35,6 +35,20 @@ var LC3 = function() {
     // Exclusive upper bound for normal memory
     // Memory address 0xFE00 and up are mapped to devices
     this.maxStandardMemory = 0xFE00;
+
+    this.namedTrapVectors = {
+        0x20: 'GETC',
+        0x21: 'OUT',
+        0x22: 'PUTS',
+        0x23: 'IN',
+        0x24: 'PUTSP',
+        0x25: 'HALT',
+    };
+};
+
+LC3.prototype.formatAddress = function(address) {
+    var label = this.addressToLabel[address];
+    return (label !== undefined) ? label : LC3Util.toHexString(address);
 };
 
 LC3.prototype.getConditionCode = function() {
@@ -194,7 +208,7 @@ LC3.prototype.decode = function(instruction) {
             op.opname = 'TRAP';
             op.mode = 'trap';
             op.trapVector = instruction & 0xFF;
-            if (op & 0x0F00 !== 0) {
+            if (0 !== (instruction & 0x0F00)) {
                 op.strictValid = false;
             }
             break;
@@ -318,16 +332,79 @@ LC3.prototype.storeResult = function(op, result) {
     }
 };
 
-LC3.prototype.instructionToString = function(address, instruction) {
+LC3.prototype.instructionToString = function(inAddress, instruction) {
     var op = this.decode(instruction);
     if (!op.strictValid) {
         return '.FILL ' + LC3Util.toHexString(op.raw);
     }
+    var reg = function(i) {
+        return 'R' + i;
+    };
+    if (!op.strictValid) {
+        return '.FILL ' + LC3Util.toHexString(op.raw);
+    }
+    var prefix = op.opname + ' ';
+    var pc = inAddress + 1;
+    var address = this.evaluateAddress(pc, op);
     switch (op.opcode) {
         case 1: // ADD
         case 5: // AND
+            var x1 = reg(op.sr1);
+            var x2 = op.arithmeticMode == 'reg' ? (reg(op.sr2)) : ('#' + op.imm);
+            var dest = reg(op.dr);
+            return prefix + [dest, x1, x2].join(', ');
+        case 9: // NOT
+            return prefix + [reg(op.dr), reg(op.sr)].join(', ');
+        case 0: // BR
+            if (op.raw === 0x0000) {
+                return 'NOP';
+            }
+            var opname = 'BR';
+            if (op.n) opname += 'n';
+            if (op.z) opname += 'z';
+            if (op.p) opname += 'p';
+            return opname + ' ' + this.formatAddress(address);
+        case 12: // JMP, RET
+            var baseR = op.baseR;
+            if (baseR === 7) {
+                return 'RET';
+            } else {
+                return 'JMP ' + reg(baseR);
+            }
+        case 4: // JSR, JSRR
+            if (mode === 'pcOffset') {
+                // JSR
+                return prefix + this.formatAddress(address);
+            } else {
+                // JSRR
+                return prefix + reg(op.baseR);
+            }
+        case 2:  // LD
+        case 10: // LDI
+        case 14: // LEA
+            return prefix + [reg(op.dr), this.formatAddress(address)].join(', ');
+        case 6:  // LDR
+            return prefix + [reg(op.dr), reg(op.br), LC3Util.toHexString(op.offset)].join(', ');
+        case 8: // RTI
+            return op.opname;
+        case 3:  // ST
+        case 11: // STI
+            return prefix + [reg(op.sr), this.formatAddress(address)].join(', ');
+        case 7:  // STR
+            return prefix + [reg(op.sr), reg(op.br), LC3Util.toHexString(op.offset)].join(', ');
+        case 15: // TRAP
+            var namedTrap = this.namedTrapVectors[address];
+            if (namedTrap !== undefined) {
+                return namedTrap;
+            } else {
+                return prefix + LC3Util.toHexString(address, 2);
+            }
+        default:
+            return null;
     }
-    // TODO
+};
+LC3.prototype.instructionAddressToString = function(address) {
+    return this.instructionToString(address, this.getMemory(address));
 };
 
 /*
