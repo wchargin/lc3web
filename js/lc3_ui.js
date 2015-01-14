@@ -33,17 +33,24 @@ $(document).ready(function() {
         if (value.length == 0) {
             return NaN;
         }
+        var negative = false;
+        if (value[0] === '-') {
+            value = value.slice(1);
+            negative = true;
+        }
         if (value[0] === 'x') {
             var hexDigits = value.slice(1);
             if (hexDigits.match(/[^0-9a-f]/)) {
                 return NaN;
             }
-            return parseInt(hexDigits, 16);
+            var num = parseInt(hexDigits, 16);
+            return negative ? -num : num;
         } else {
             if (value.match(/[^0-9]/)) {
                 return NaN;
             }
-            return parseInt(value);
+            var num = parseInt(value);
+            return negative ? -num : num;
         }
     };
 
@@ -221,14 +228,14 @@ $(document).ready(function() {
             cellHex.data('edit-linkage', editLinkage);
 
             if (lc3.pc === address) {
-                $row.addClass('address-pc');
+                $row.addClass('active');
             } else {
-                $row.removeClass('address-pc');
+                $row.removeClass('active');
             }
             if (breakpoints.indexOf(address) !== -1) {
-                $row.addClass('address-breakpoint');
+                $row.addClass('danger');
             } else {
-                $row.removeClass('address-breakpoint');
+                $row.removeClass('danger');
             }
         }
     };
@@ -267,6 +274,7 @@ $(document).ready(function() {
         var address = parseNumber(text);
 
         var isInvalid = false;
+        var outOfBounds = false;
         if (isNaN(address)) {
             // Perhaps it's the name of a label?
             var labelAddress = lc3.labelToAddress[text];
@@ -284,8 +292,10 @@ $(document).ready(function() {
             if (address < lc3.memory.length) {
                 displayMemory(address);
                 bounds.slideUp();
+                outOfBounds = false;
             } else {
                 bounds.slideDown();
+                outOfBounds = true;
             }
         }
         if (isInvalid) {
@@ -293,6 +303,11 @@ $(document).ready(function() {
             bounds.slideUp();
         } else {
             invalid.slideUp();
+        }
+        if (isInvalid || outOfBounds) {
+            $('#mem-jumpto-group').addClass('has-error');
+        } else {
+            $('#mem-jumpto-group').removeClass('has-error');
         }
         $('#mem-jumpto').focus();
     };
@@ -344,7 +359,6 @@ $(document).ready(function() {
             // List of errors.
             var $ul =  $('<ul>').appendTo($('<div>').appendTo($container));
             var $msgValid = $('<li>').text('Invalid number').appendTo($ul);
-            var $msgRange = $('<li>').text('Value out of range').appendTo($ul);
 
             // Buttons to submit or cancel.
             var $buttons = $('<div>').addClass('btn-group');
@@ -355,7 +369,8 @@ $(document).ready(function() {
             };
             var doSubmit = function() {
                 $oldThis.popover('hide');
-                updateValue(linkage, parseNumber($field.val()));
+                var num = LC3Util.toUint16(parseNumber($field.val()));
+                updateValue(linkage, num);
             };
 
             var $cancel = $('<button>').addClass('btn').appendTo($buttons)
@@ -370,10 +385,9 @@ $(document).ready(function() {
                 var text = $(this).val();
                 var num = parseNumber(text);
 
-                // Determine: number valid? number within valid range?
+                // Determine: number valid?
                 var valid = !isNaN(num);
-                var inRange = num < 0x10000 && num >= 0;
-                var okay = valid && inRange;
+                num = LC3Util.toUint16(num);
 
                 // Update (show/hide) error messages
                 if (!valid) {
@@ -381,20 +395,22 @@ $(document).ready(function() {
                 } else {
                     $msgValid.slideUp('fast');
                 }
-                if (valid && !inRange) {
-                    $msgRange.slideDown('fast');
+
+                // Update field highlighting
+                if (valid) {
+                    $inputBar.removeClass('has-error');
                 } else {
-                    $msgRange.slideUp('fast');
+                    $inputBar.addClass('has-error');
                 }
 
                 // Update status indicator
                 var goodClass = 'glyphicon-pencil';
                 var badClass = 'glyphicon-exclamation-sign';
-                $icon.addClass(okay ? goodClass : badClass);
-                $icon.removeClass(okay ? badClass : goodClass);
+                $icon.addClass(valid ? goodClass : badClass);
+                $icon.removeClass(valid ? badClass : goodClass);
 
                 // Update submit button
-                $submit.prop('disabled', !okay);
+                $submit.prop('disabled', !valid);
             }).keydown(function(e) {
                 if (e.keyCode === 13) { // Enter
                     $submit.click();
@@ -416,6 +432,14 @@ $(document).ready(function() {
     $('.hex-value').tooltip( { title: hexValueTooltipTitle });
 
     $('#control-step').click(function() { lc3.nextInstruction(); });
+
+    $('#console-contents').focus(function() {
+        $(this).addClass('bg-info');
+    });
+    $('#console-contents').blur(function() {
+        $(this).removeClass('bg-info');
+    });
+
 
     $('#container-wait').slideUp();
     $('#container-main').fadeIn();

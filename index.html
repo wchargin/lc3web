@@ -45,6 +45,7 @@
   </div>
 </div>
 <div class="container" id="container-main" style="display: none;">
+  <div class="row">
     <div class="col-md-12">
       <h1>Status</h1>
       <div class="btn-group" role="group">
@@ -61,6 +62,8 @@
         <!-- added dynamically -->
       </div>
     </div>
+  </div>
+  <div class="row">
     <div class="col-md-6">
       <h1>Memory</h1>
       <div class="alert alert-danger hidden-alert" role="alert" id="error-address-invalid">
@@ -75,12 +78,12 @@
         The memory address you've entered is <strong>out of bounds</strong>.
         Memory addresses must be within <span class="hex-value">x0000</span> and <span class="hex-value hex-signed">xFFFF</span>, inclusive.
       </div>
-      <div class="input-group">
+      <div class="input-group" id="mem-jumpto-group">
         <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-activate"><span class="glyphicon glyphicon-search"></span></button></span>
         <input type="text" id="mem-jumpto" class="form-control" placeholder="Jump to address or label">
         <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-go"><span class="glyphicon glyphicon-arrow-right"></span></button></span>
       </div>
-      <table class="table table" id="memory-table">
+      <table class="table table-hover" id="memory-table">
         <thead>
           <tr>
             <th>0x</th>
@@ -120,6 +123,7 @@
     </div>
     <div class="col-md-6">
       <h1>Console</h1>
+      <pre class="pre-scrollable" id="console-contents" tabindex="0">---LC-3 Simulator---&#x0a;</pre>
     </div>
   </div>
 </div>
