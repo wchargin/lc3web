@@ -26,6 +26,13 @@ $(document).ready(function() {
     var breakpoints = [];
 
     /*
+     * Different characters to recognize as newlines
+     * and map to the user's preferred line terminator.
+     */
+    var newlines = [0x0A, 0x0D];
+    var preferredNewline = 0x0A;
+
+    /*
      * Parses a decimal or hexadecimal value, or returns NaN.
      */
     var parseNumber = function(value) {
@@ -435,10 +442,21 @@ $(document).ready(function() {
 
     $('#console-contents').focus(function() {
         $(this).addClass('bg-info');
-    });
-    $('#console-contents').blur(function() {
+    }).blur(function() {
         $(this).removeClass('bg-info');
+    }).keypress(function(e) {
+        var key = e.which;
+        if (newlines.indexOf(key) !== -1) {
+            key = preferredNewline;
+        }
+        console.log(key);
     });
+
+    $('#newline-0a, #newline-0d').change(function() {
+        preferredNewline = parseInt($(this).data('newline'), 16);
+        $('#console-contents').focus();
+    });
+    $('#newline-0a').change();
 
 
     $('#container-wait').slideUp();
