@@ -36,6 +36,12 @@ var LC3 = function() {
     // Memory address 0xFE00 and up are mapped to devices
     this.maxStandardMemory = 0xFE00;
 
+    // Addresses of mapped memory locations
+    this.kbsr = 0xFE00;
+    this.kbdr = 0xFE02;
+    this.dsr =  0xFE04;
+    this.ddr =  0xFE06;
+
     this.namedTrapVectors = {
         0x20: 'GETC',
         0x21: 'OUT',
@@ -44,6 +50,9 @@ var LC3 = function() {
         0x24: 'PUTSP',
         0x25: 'HALT',
     };
+
+    // A queue of keys that the user has entered, but have not been processed.
+    this.bufferedKeys = new Queue();
 };
 
 LC3.prototype.formatAddress = function(address) {
@@ -72,12 +81,19 @@ LC3.prototype.setConditionCode = function(value) {
 
 // Stages of the instruction cycle
 LC3.prototype.nextInstruction = function() {
+    // Store any keypresses since last time.
+    this.updateIO();
+
+    // Perform the instruction cycle.
     this.fetch();
     var op = this.decode(this.ir);
     var address = this.evaluateAddress(this.pc, op);
     var operand = this.fetchOperands(address);
     var result = this.execute(op, address, operand);
     this.storeResult(op, result);
+
+    // Display any output since last time.
+    this.updateIO();
 };
 LC3.prototype.fetch = function() {
     this.ir = this.getMemory(this.pc);
@@ -195,14 +211,14 @@ LC3.prototype.decode = function(instruction) {
             op.opname = (op.opcode === 3 ? 'ST' : 'STI');
             op.sr = bits911;
             op.mode = 'pcOffset';
-            op.pcOffset = LC3Util.signExtend16(bits08, 9);
+            op.offset = LC3Util.signExtend16(bits08, 9);
             break;
         case 7: // STR
             op.opname = 'STR';
             op.sr = bits911;
             op.mode = 'baseOffset';
             op.baseR = bits68;
-            op.offset6 = LC3Util.signExtend16(bits05, 6);
+            op.offset = LC3Util.signExtend16(bits05, 6);
             break;
         case 15: // TRAP
             op.opname = 'TRAP';
@@ -236,7 +252,7 @@ LC3.prototype.fetchOperands = function(address) {
     if (address === null || address === undefined) {
         return address;
     }
-    return this.getMemory(address);
+    return this.readMemory(address);
 };
 LC3.prototype.execute = function(op, address, operand) {
     switch (op.opcode) {
@@ -267,7 +283,7 @@ LC3.prototype.execute = function(op, address, operand) {
         case 2: // LD
             return operand;
         case 10: // LDI
-            return this.getMemory(operand);
+            return this.readMemory(operand);
         case 6: // LDR
             return operand;
         case 14: // LEA
@@ -277,19 +293,19 @@ LC3.prototype.execute = function(op, address, operand) {
         case 8: // RTI
             // TODO handle privilege mode exception
             var r6 = this.r[6];
-            var temp = this.getMemory(r6 + 1);
+            var temp = this.readMemory(r6 + 1);
             this.setRegister('pc', r6);
             this.setRegister('psr', temp);
             this.setRegister(6, r6 + 2);
             return null;
         case 3: // ST
-            this.setMemory(address, this.getRegister(op.sr));
+            this.writeMemory(address, this.getRegister(op.sr));
             return null;
         case 11: // STI
-            this.setMemory(operand, this.getRegister(op.sr));
+            this.writeMemory(operand, this.getRegister(op.sr));
             return null;
         case 7: // STR
-            this.setMemory(address, this.getRegister(op.sr));
+            this.writeMemory(address, this.getRegister(op.sr));
             return null;
         case 15: // TRAP
             this.setRegister('pc', address);
@@ -316,6 +332,7 @@ LC3.prototype.storeResult = function(op, result) {
         case 6:  // LDR
         case 14: // LEA
             this.setRegister(op.dr, result);
+            this.setConditionCode(result);
         case 8: // RTI
             // Nothing to do here.
             return;
@@ -467,8 +484,9 @@ LC3.prototype.unsetLabel_internal_ = function(address, label) {
     };
     this.notifyListeners(ev);
 };
-
-// Functions to get and set memory, handling mapped memory edge cases
+// Functions to get and set memory.
+// getMemory and setMemory are the referentially transparent versions of
+// readMemory and writeMemory, respectively.
 LC3.prototype.getMemory = function(address) {
     return this.memory[address];
 }
@@ -480,6 +498,24 @@ LC3.prototype.setMemory = function(address, data) {
     };
     this.memory[address] = data;
     this.notifyListeners(ev);
+};
+
+// Functions to read from and write to memory.
+// If these interact with data/status registers, other memory may be changed!
+// If you just want to purely inspect the data, use (get|set)Memory instead.
+LC3.prototype.readMemory = function(address) {
+    if (address === this.kbdr) {
+        // Reading KBDR: must turn off KBSR.
+        this.setMemory(this.kbsr, this.getMemory(this.kbsr) & 0x7FFF);
+    }
+    return this.getMemory(address);
+}
+LC3.prototype.writeMemory = function(address, data) {
+    if (address === this.ddr) {
+        // Writing DDR: must turn of DSR.
+        this.setMemory(this.dsr, this.getMemory(this.dsr) & 0x7FFF);
+    }
+    this.setMemory(address, data);
 };
 
 // Functions to get and set registers (standard or special)
@@ -518,3 +554,38 @@ LC3.prototype.setRegister = function(register, value) {
     }
     return false;
 }
+
+LC3.prototype.sendKey = function(character) {
+    this.bufferedKeys.enqueue(character);
+    this.notifyListeners({ type: 'bufferchange' });
+};
+
+LC3.prototype.updateIO = function() {
+    // Check keyboard.
+    var kbsrValue = this.getMemory(this.kbsr);
+    var kbsrReady = (kbsrValue & 0x8000) === 0;
+    if (kbsrReady && !this.bufferedKeys.isEmpty()) {
+        this.setMemory(this.kbsr, kbsrValue | 0x8000);
+        this.setMemory(this.kbdr, this.bufferedKeys.dequeue() & 0x00FF);
+        this.notifyListeners({ type: 'bufferchange' });
+    }
+
+    // Check display output.
+    var dsrValue = this.getMemory(this.dsr);
+    var dsrReady = (dsrValue & 0x8000) === 0;
+    if (dsrReady) {
+        var key = this.getMemory(this.ddr);
+        var ev = {
+            type: 'keyout',
+            value: key,
+        };
+        this.notifyListeners(ev);
+        this.setMemory(this.dsr, dsrValue | 0x8000);
+    }
+};
+
+LC3.prototype.clearBufferedKeys = function() {
+    // This Queue library has no clear function.
+    this.bufferedKeys = new Queue();
+    this.notifyListeners({ type: 'bufferchange' });
+};

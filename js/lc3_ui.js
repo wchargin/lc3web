@@ -15,6 +15,9 @@ $(document).ready(function() {
         lc3.memory[0x3007] = 0x193F;
         lc3.memory[0x3008] = 0x03FB;
         lc3.memory[0x3009] = 0xF025;
+        lc3.memory[0xFDFD] = 0x2004;
+        lc3.memory[0xFDFE] = 0x3007;
+        lc3.memory[0xFDFF] = 0x01FD;
         lc3.setRegister(0, 42);
         lc3.setRegister(1, 68);
         for (var i = 0; i < 10; i++) {
@@ -51,6 +54,21 @@ $(document).ready(function() {
     var preferredNewline = 0x0A;
 
     /*
+     * Standardize a character code (input is integer, not string).
+     * Newlines will be converted to the desired format.
+     * Other characters will pass through unchanged.
+     */
+    var standardizeChar = function(key) {
+        if (newlines.indexOf(key) === -1) {
+            // It's not a newline; let it pass unfiltered.
+            return key;
+        } else {
+            // If we have a preference, force it.
+            return preferredNewline !== null ? preferredNewline : key;
+        }
+    };
+
+    /*
      * Callback function invoked when a value is edited by the user,
      * and memory and/or the display should be updated.
      */
@@ -65,6 +83,12 @@ $(document).ready(function() {
         } else {
             throw new Error("Unknown linkage type: " + type);
         }
+    };
+
+    var updateBufferCount = function() {
+        var count = lc3.bufferedKeys.getLength();
+        $('#buffered-char-count').text(count.toString());
+        $('#buffered-char-noun').text(count === 1 ? 'character' : 'characters');
     };
 
     /*
@@ -84,6 +108,13 @@ $(document).ready(function() {
         } else if (type === 'labelset' || type === 'labelunset') {
             // Easiest to just reset the display.
             refreshMemoryDisplay();
+        } else if (type === 'bufferchange') {
+            updateBufferCount();
+        } else if (type === 'keyout') {
+            // Add to the console.
+            var $console = $('#console-contents');
+            var ch = String.fromCharCode(standardizeChar(ev.value));
+            $console.text($console.text() + ch);
         } else {
             // handle this?
         }
@@ -98,7 +129,7 @@ $(document).ready(function() {
             // This row isn't currently displayed.
             return;
         }
-        var data = lc3.getMemory(address);
+        var data = lc3.memory[address];
         var $row = memoryRows[row];
 
         var $cellAddress = $row.find('span.memory-address');
@@ -152,7 +183,7 @@ $(document).ready(function() {
         // Update each row individually.
         for (var i = 0; i < memoryRows.length; i++) {
             var address = i + startPosition;
-            var data = lc3.getMemory(address);
+            var data = lc3.memory[address];
             updateMemoryRow(address);
 
             // Update the edit linkage.
@@ -418,7 +449,7 @@ $(document).ready(function() {
         },
         trigger: 'click'
     }).on('shown.bs.popover', function() {
-        $('.hex-edit-field').focus();
+        $('.hex-edit-field').focus().select();
     });
 
     // Set up hex-value tooltips.
@@ -447,7 +478,7 @@ $(document).ready(function() {
         $('#control-step').click(function() { lc3.nextInstruction(); });
     })();
 
-    // Set up console for key events.
+    // Set up console for key events and clear buttons.
     (function() {
         $('#console-contents').focus(function() {
             $(this).addClass('bg-info');
@@ -455,21 +486,32 @@ $(document).ready(function() {
             $(this).removeClass('bg-info');
         }).keypress(function(e) {
             var key = e.which;
-            if (newlines.indexOf(key) !== -1) {
-                key = preferredNewline;
-            }
+            lc3.sendKey(standardizeChar(key));
         });
+
+        $('#btn-clear-in').click(function() {
+            lc3.clearBufferedKeys();
+        });
+        $('#btn-clear-out').click(function() {
+            $('#console-contents').text('');
+        });
+
+        updateBufferCount();
     })();
+
 
     // Link newline radio buttons to model
     (function() {
-        $('#newline-0a, #newline-0d').change(function() {
-            preferredNewline = parseInt($(this).data('newline'), 16);
+        $('#newline-select input[type=radio]').change(function() {
+            var newline = $(this).data('newline');
+            if (newline === 'binary') {
+                preferredNewline = null;
+            } else {
+                preferredNewline = parseInt($(this).data('newline'), 16);
+            }
             $('#console-contents').focus();
         });
-        $('#newline-0a').change();
     })();
-
 
     // Activate!
     $('#container-wait').slideUp();

@@ -124,23 +124,32 @@
       </div>
       <div class="text-center">
         <div class="btn-group" role="group">
-          <button type="button" class="btn btn-default">Continue</button>
+          <button type="button" disabled="disabled" class="btn btn-default">Continue</button>
           <button type="button" class="btn btn-default" id="control-step">Step</button>
-          <button type="button" class="btn btn-default">Next</button>
-          <button type="button" class="btn btn-default">Finish</button>
+          <button type="button" disabled="disabled" class="btn btn-default">Next</button>
+          <button type="button" disabled="disabled" class="btn btn-default">Finish</button>
         </div>
       </div>
     </div>
     <div class="col-md-6">
       <h1>Console</h1>
-      <pre class="pre-scrollable" id="console-contents" tabindex="0">---LC-3 Simulator---&#x0a;</pre>
-      <div class="form-group">
-        <label class="radio-inline">
-          <input type="radio" name="newline" data-newline="0a" id="newline-0a" checked="checked">Newline as <span class="hex-value">0x0A</span>
-        </label>
-        <label class="radio-inline">
-          <input type="radio" name="newline" data-newline="0d" id="newline-0d">Newline as <span class="hex-value">0x0D</span>
-        </label>
+      <pre class="pre-scrollable" id="console-contents" tabindex="0"></pre>
+      <div class="text-center">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-default" id="btn-clear-in">Clear Input Buffer (<span id="buffered-char-count"></span> <span id="buffered-char-noun"></span>)</button>
+          <button type="button" class="btn btn-default" id="btn-clear-out">Clear Output</button>
+        </div>
+      </div>
+      <div class="form-group" id="newline-select">
+        <div class="radio">
+          <label><input type="radio" name="newline" data-newline="0a" id="newline-0a" checked="checked">Newline as <span class="hex-value">0x0A</span></label>
+        </div>
+        <div class="radio">
+          <label><input type="radio" name="newline" data-newline="0d" id="newline-0d">Newline as <span class="hex-value">0x0D</span></label>
+        </div>
+        <div class="radio">
+          <label><input type="radio" name="newline" data-newline="binary" id="newline-binary">Binary (leave newlines unchanged)</label>
+        </div>
       </div>
     </div>
   </div>
@@ -153,6 +162,7 @@
 <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> -->
 <script src="js/jquery-1.11.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script src="js/Queue.js"></script>
 <script src="js/lc3_util.js"></script>
 <script src="js/lc3_core.js"></script>
 <script src="js/lc3_ui.js"></script>
