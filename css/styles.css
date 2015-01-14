@@ -33,3 +33,7 @@
 #console-contents {
     height: 350px;
 }
+
+footer {
+    min-height: 30px;
+}

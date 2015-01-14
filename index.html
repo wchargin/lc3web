@@ -48,18 +48,25 @@
   <div class="row">
     <div class="col-md-12">
       <h1>Status</h1>
-      <div class="btn-group" role="group">
-        <button type="button" class="btn btn-default">Continue</button>
-        <button type="button" class="btn btn-default" id="control-step">Step</button>
-        <button type="button" class="btn btn-default">Next</button>
-        <button type="button" class="btn btn-default">Finish</button>
+      <div class="panel panel-default">
+        <div class="panel-heading"><h3 class="panel-title">Registers</h3></div>
+        <div class="panel-body">
+          <div class="row register-row" id="registers-primary">
+            <!-- added dynamically -->
+          </div>
+          <div class="row"><div class="col-xs-0"></div></div>
+          <div class="row register-row" id="registers-special">
+            <!-- added dynamically -->
+          </div>
+        </div>
       </div>
-      <div class="row register-row" id="registers-primary">
-        <!-- added dynamically -->
-      </div>
-      <div class="row"><div class="col-xs-0"></div></div>
-      <div class="row register-row" id="registers-special">
-        <!-- added dynamically -->
+      <div class="text-center">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-default">Continue</button>
+          <button type="button" class="btn btn-default" id="control-step">Step</button>
+          <button type="button" class="btn btn-default">Next</button>
+          <button type="button" class="btn btn-default">Finish</button>
+        </div>
       </div>
     </div>
   </div>
@@ -127,6 +134,7 @@
     </div>
   </div>
 </div>
+<footer></footer>
 
 <!-- Bootstrap core JavaScript
 ================================================== -->
