@@ -25,7 +25,7 @@ var LC3 = function() {
     // Initialize special registers
     this.pc = 0x3000;
     this.ir = 0;
-    this.psr = 0x0400;
+    this.psr = 0x8002;
     this.specialRegisters = ['pc', 'ir', 'psr'];
 
     // Dictionaries for linking addresses and labels
