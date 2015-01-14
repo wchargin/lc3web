@@ -60,52 +60,57 @@
         The memory address you've entered is <strong>out of bounds</strong>.
         Memory addresses must be within <span class="hex-value">x0000</span> and <span class="hex-value hex-signed">xFFFF</span>, inclusive.
       </div>
-      <div class="input-group" id="mem-jumpto-group">
-        <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-activate"><span class="glyphicon glyphicon-search"></span></button></span>
-        <input type="text" id="mem-jumpto" class="form-control" placeholder="Jump to address or label">
-        <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-go"><span class="glyphicon glyphicon-arrow-right"></span></button></span>
-      </div>
-      <table class="table table-hover" id="memory-table">
-        <thead>
-          <tr>
-            <th>0x</th>
-            <th>Label</th>
-            <th>Hex</th>
-            <th>Instruction</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div class="row" id="scroll-container">
-        <div class="col-xs-12 col-sm-6">
-          <div class="btn-group" role="group">
-            <button type="button" class="btn btn-default" id="mem-scroll-up"><span class="glyphicon glyphicon-chevron-up"></span></button>
-            <button type="button" class="btn btn-default" id="mem-scroll-down"><span class="glyphicon glyphicon-chevron-down"></span></button>
-          </div>
-          <div class="btn-group" role="group">
-            <button type="button" class="btn btn-default" id="mem-jump-pc">Jump to PC</button>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <div class="input-group" id="mem-jumpto-group">
+            <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-activate"><span class="glyphicon glyphicon-search"></span></button></span>
+            <input type="text" id="mem-jumpto" class="form-control" placeholder="Jump to address or label">
+            <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-go"><span class="glyphicon glyphicon-arrow-right"></span></button></span>
           </div>
         </div>
-        <div class="col-xs-12 col-sm-6">
-          <div class="btn-group dropup">
-            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" id="mem-load">
-              Load <span class="caret"></span>
-              <span class="sr-only">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu" role="menu">
-              <li><a href="#" role="button" id="mem-upload-object">Object file</a></li>
-              <li><a href="#" role="button" id="mem-upload-symbol">Symbol table</a></li>
-              <li class="divider"></li>
-              <li><a href="#" role="button" id="mem-reload-os">Reload OS</a></li>
-            </ul>
+        <table class="table table-hover" id="memory-table">
+          <thead>
+            <tr>
+              <th>0x</th>
+              <th>Label</th>
+              <th>Hex</th>
+              <th>Instruction</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="panel-footer">
+          <div class="row" id="scroll-container">
+            <div class="col-xs-12 col-sm-6">
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-default" id="mem-scroll-up"><span class="glyphicon glyphicon-chevron-up"></span></button>
+                <button type="button" class="btn btn-default" id="mem-scroll-down"><span class="glyphicon glyphicon-chevron-down"></span></button>
+              </div>
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-default" id="mem-jump-pc">Jump to PC</button>
+              </div>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+              <div class="btn-group dropup">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" id="mem-load">
+                  Load <span class="caret"></span>
+                  <span class="sr-only">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                  <li><a href="#" role="button" id="mem-upload-object">Object file</a></li>
+                  <li><a href="#" role="button" id="mem-upload-symbol">Symbol table</a></li>
+                  <li class="divider"></li>
+                  <li><a href="#" role="button" id="mem-reload-os">Reload OS</a></li>
+                </ul>
+              </div>
+              <button class="btn btn-default" type="button" id="mem-dump">Dump Memory</button>
+            </div>
           </div>
-          <button class="btn btn-default" type="button" id="mem-dump">Dump Memory</button>
-        </div>
-      </div>
+      </div></div>
     </div>
     <div class="col-md-6">
       <h1>Status</h1>
-      <div class="panel panel-default">
+      <div class="panel panel-default" id="register-panel">
         <div class="panel-heading"><h3 class="panel-title">Registers</h3></div>
         <div class="panel-body">
           <div class="row register-row" id="registers-primary">

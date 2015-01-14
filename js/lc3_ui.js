@@ -2,7 +2,25 @@ $(document).ready(function() {
     var lc3 = new LC3();
     window.lc3 = lc3; // for ease of debugging
 
-    lc3.setLabel(0x3000, 'START');
+    // Preload the LC3
+    (function() {
+        lc3.setLabel(0x3000, 'START');
+        lc3.memory[0x3000] = 0x5260;
+        lc3.memory[0x3001] = 0x5920;
+        lc3.memory[0x3002] = 0x192A;
+        lc3.memory[0x3003] = 0xE4FC;
+        lc3.memory[0x3004] = 0x6680;
+        lc3.memory[0x3005] = 0x14A1;
+        lc3.memory[0x3006] = 0x1243;
+        lc3.memory[0x3007] = 0x193F;
+        lc3.memory[0x3008] = 0x03FB;
+        lc3.memory[0x3009] = 0xF025;
+        lc3.setRegister(0, 42);
+        lc3.setRegister(1, 68);
+        for (var i = 0; i < 10; i++) {
+            lc3.memory[0x3100 + i] = 2 * i + 1;
+        }
+    })();
 
     /*
      * Address of the top value in the table.
@@ -33,56 +51,8 @@ $(document).ready(function() {
     var preferredNewline = 0x0A;
 
     /*
-     * Parses a decimal or hexadecimal value, or returns NaN.
-     */
-    var parseNumber = function(value) {
-        value = value.toLowerCase();
-        if (value.length == 0) {
-            return NaN;
-        }
-        var negative = false;
-        if (value[0] === '-') {
-            value = value.slice(1);
-            negative = true;
-        }
-        if (value[0] === 'x') {
-            var hexDigits = value.slice(1);
-            if (hexDigits.match(/[^0-9a-f]/)) {
-                return NaN;
-            }
-            var num = parseInt(hexDigits, 16);
-            return negative ? -num : num;
-        } else {
-            if (value.match(/[^0-9]/)) {
-                return NaN;
-            }
-            var num = parseInt(value);
-            return negative ? -num : num;
-        }
-    };
-
-    /*
-     * Gets the tooltip text for $(this), a .hex-value item.
-     */
-    var hexValueTooltipTitle = function() {
-        if ($(this).hasClass('hex-no-tooltip')) {
-            return;
-        }
-        var signed = $(this).hasClass('hex-signed');
-        var hex = $(this).text().replace(/[^0-9A-Fa-f]/g, '');
-        var num = parseInt("0x" + hex);
-        if (signed) {
-            num = LC3Util.toInt16(num);
-        }
-        var numString = num.toString().replace('-', '\u2212');
-        var prefix = 'decimal ';
-        var suffix = signed ? ' (signed)' : ' (unsigned)';
-        var titleText = prefix + numString + suffix;
-        return titleText;
-    };
-
-    /*
-     *
+     * Callback function invoked when a value is edited by the user,
+     * and memory and/or the display should be updated.
      */
     var updateValue = function(linkage, value) {
         var type = linkage.type;
@@ -104,12 +74,7 @@ $(document).ready(function() {
         var type = ev.type;
         if (type === 'memset') {
             var address = ev.address;
-            var index = address - currentMemoryLocation;
-            if (0 <= index && index < memoryRows.length) {
-                var $row = memoryRows[index];
-                $row.find('.memory-hex').text(LC3Util.toHexString(ev.newValue));
-                $row.find('.memory-instruction').text(lc3.instructionAddressToString(address));
-            }
+            updateMemoryRow(address);
         } else if (type === 'regset') {
             if (ev.register === 'pc') {
                 // We might have to change the highlighting of rows.
@@ -124,76 +89,48 @@ $(document).ready(function() {
         }
     });
 
-    // Add the registers
-    var $registersPrimary = $('#registers-primary');
-    for (var i = 0; i < lc3.r.length; i++) {
-        var name = 'R' + i;
-        var editLinkage = {
-            type: 'register',
-            register: i,
-            name: name
-        };
-        var $row = $('<div>')
-            .addClass('col-xs-6 col-sm-3');
-        var $name = $('<span>')
-            .addClass('register-name')
-            .text(name);
-        var $value = $('<span>')
-            .addClass('register-value hex-value hex-signed hex-editable')
-            .text(LC3Util.toHexString(lc3.getRegister(i)))
-            .data('edit-linkage', editLinkage);
-        $row.append($name).append(': ').append($value);
-        $registersPrimary.append($row);
-        registers[i] = $value;
-    }
-    var $registersSpecial = $('#registers-special');
-    for (var i = 0; i < lc3.specialRegisters.length; i++) {
-        var register = lc3.specialRegisters[i];
-        var name = register.toUpperCase();
-        var editLinkage = {
-            type: 'register',
-            register: register,
-            name: name
-        };
-        var $row = $('<div>')
-            .addClass('col-xs-12 col-sm-3');
-        var $name = $('<span>')
-            .addClass('register-name')
-            .text(name);
-        var $value = $('<span>')
-            // note: special registers are unsigned
-            .addClass('register-value hex-value hex-editable')
-            .text(LC3Util.toHexString(lc3.getRegister(register)))
-            .data('edit-linkage', editLinkage);
-        $row.append($name).append(': ').append($value);
-        $registersSpecial.append($row);
-        registers[register] = $value;
-    }
+    /*
+     * Update a single row in memory to reflect changes in the model.
+     */
+    var updateMemoryRow = function(address) {
+        var row = address - currentMemoryLocation;
+        if (row < 0 || row >= memoryRows.length) {
+            // This row isn't currently displayed.
+            return;
+        }
+        var data = lc3.getMemory(address);
+        var $row = memoryRows[row];
 
-    // Add the memory addresses
-    var $cellTableBody = $('#memory-table tbody');
-    for (var i = 0; i < memoryRows.length; i++) {
-        var $row = $('<tr>');
-        $row.addClass('memory-cell');
-        var createCell = function(classes, value) {
-            var $cell = $('<td>');
-            var $contents = $('<span>');
-            for (var j = 0; j < classes.length; j++)
-            {
-                $contents.addClass(classes[j]);
-            }
-            $contents.text(value);
-            $cell.append($contents);
-            return $cell;
-        };
-        $row.append(createCell(['memory-address', 'hex-value'], LC3Util.toHexString(i + 0x3000)));
-        $row.append(createCell(['memory-label'], ''));
-        $row.append(createCell(['memory-hex', 'hex-value', 'hex-signed', 'hex-editable'], 'x0000'));
-        $row.append(createCell(['memory-instruction'], 'NOP'));
-        $cellTableBody.append($row);
-        memoryRows[i] = $row;
-    }
+        var $cellAddress = $row.find('span.memory-address');
+        var $cellLabel = $row.find('span.memory-label');
+        var $cellHex = $row.find('span.memory-hex');
+        var $cellInstruction = $row.find('span.memory-instruction');
 
+        $cellAddress.text(LC3Util.toHexString(address));
+        $cellLabel.text(lc3.addressToLabel[address] || '');
+        $cellHex.text(LC3Util.toHexString(data));
+        $cellInstruction.text(lc3.instructionAddressToString(address));
+
+        // Highlight the program counter.
+        var pcClass = 'active';
+        if (lc3.pc === address) {
+            $row.addClass(pcClass);
+        } else {
+            $row.removeClass(pcClass);
+        }
+
+        // Mark breakpoints in red.
+        var breakpointClass = 'danger';
+        if (breakpoints.indexOf(address) !== -1) {
+            $row.addClass(breakpointClass);
+        } else {
+            $row.removeClass(breakpointClass);
+        }
+    };
+    /*
+     * Display a block of memory starting at the given location.
+     * All rows will be updated.
+     */
     var displayMemory = function(startPosition) {
         // If the user inputs, e.g., 0xFFFF, that's a valid value,
         // but the remaining fifteen would not be. Clamp them out.
@@ -212,73 +149,45 @@ $(document).ready(function() {
         }
         currentMemoryLocation = startPosition;
 
+        // Update each row individually.
         for (var i = 0; i < memoryRows.length; i++) {
             var address = i + startPosition;
             var data = lc3.getMemory(address);
-            var $row = memoryRows[i];
+            updateMemoryRow(address);
 
-            var cellAddress = $row.find('span.memory-address');
-            var cellLabel = $row.find('span.memory-label');
-            var cellHex = $row.find('span.memory-hex');
-            var cellInstruction = $row.find('span.memory-instruction');
-
-            cellAddress.text(LC3Util.toHexString(address));
-            cellLabel.text(lc3.addressToLabel[address] || '');
-            cellHex.text(LC3Util.toHexString(data));
-            cellInstruction.text(lc3.instructionAddressToString(address));
-
+            // Update the edit linkage.
             var editLinkage = {
                 type: 'address',
                 address: address,
                 name: LC3Util.toHexString(address),
             };
-            cellHex.data('edit-linkage', editLinkage);
-
-            if (lc3.pc === address) {
-                $row.addClass('active');
-            } else {
-                $row.removeClass('active');
-            }
-            if (breakpoints.indexOf(address) !== -1) {
-                $row.addClass('danger');
-            } else {
-                $row.removeClass('danger');
-            }
+            var $row = memoryRows[i];
+            $row.find('.memory-hex').data('edit-linkage', editLinkage);
         }
     };
+    /*
+     * Refresh the current memory display to reflect any changes.
+     */
     var refreshMemoryDisplay = function() {
         displayMemory(currentMemoryLocation);
     };
-    lc3.memory[0x3000] = 0x5260;
-    lc3.memory[0x3001] = 0x5920;
-    lc3.memory[0x3002] = 0x192A;
-    lc3.memory[0x3003] = 0xE4FC;
-    lc3.memory[0x3004] = 0x6680;
-    lc3.memory[0x3005] = 0x14A1;
-    lc3.memory[0x3006] = 0x1243;
-    lc3.memory[0x3007] = 0x193F;
-    lc3.memory[0x3008] = 0x03FB;
-    lc3.memory[0x3009] = 0xF025;
-    lc3.setRegister(0, 42);
-    lc3.setRegister(1, 68);
 
-    $(".hex-value").each(function() {
-        var $el = $(this);
-    });
-    displayMemory(currentMemoryLocation);
-
+    /*
+     * Jump to the memory location (or label) listed in the search field.
+     * Display an error alert to the user if the location is invalid.
+     */
     var performJumpTo = function() {
-        var invalid = $('#error-address-invalid');
-        var bounds = $('#error-address-bounds');
+        var $invalid = $('#error-address-invalid');
+        var $bounds = $('#error-address-bounds');
 
         var text = $('#mem-jumpto').val().trim();
         if (text.length === 0) {
             // Cleared the field; nothing to do.
-            invalid.slideUp();
-            bounds.slideUp();
+            $invalid.slideUp();
+            $bounds.slideUp();
             return;
         }
-        var address = parseNumber(text);
+        var address = LC3Util.parseNumber(text);
 
         var isInvalid = false;
         var outOfBounds = false;
@@ -298,18 +207,18 @@ $(document).ready(function() {
             isInvalid = false;
             if (address < lc3.memory.length) {
                 displayMemory(address);
-                bounds.slideUp();
+                $bounds.slideUp();
                 outOfBounds = false;
             } else {
-                bounds.slideDown();
+                $bounds.slideDown();
                 outOfBounds = true;
             }
         }
         if (isInvalid) {
-            invalid.slideDown();
-            bounds.slideUp();
+            $invalid.slideDown();
+            $bounds.slideUp();
         } else {
-            invalid.slideUp();
+            $invalid.slideUp();
         }
         if (isInvalid || outOfBounds) {
             $('#mem-jumpto-group').addClass('has-error');
@@ -318,27 +227,109 @@ $(document).ready(function() {
         }
         $('#mem-jumpto').focus();
     };
-    $('#mem-jumpto-activate').click(function() {
-        $('#mem-jumpto').focus();
-    });
-    $('#mem-jumpto').on('input', performJumpTo);
-    $('#mem-jumpto-go').click(performJumpTo);
 
-    $('#mem-jump-pc').click(function() {
-        displayMemory(lc3.pc);
-        $(this).blur();
-    });
-    $('#mem-scroll-up').click(function() {
-        displayMemory(currentMemoryLocation - 1);
-        $(this).blur();
-    });
-    $('#mem-scroll-down').click(function() {
-        displayMemory(currentMemoryLocation + 1);
-        $(this).blur();
-    });
+    // Set up listeners for memory scrolling controls.
+    (function() {
+        $('#mem-jumpto-activate').click(function() {
+            $('#mem-jumpto').focus();
+        });
+        $('#mem-jumpto').on('input', performJumpTo);
+        $('#mem-jumpto-go').click(performJumpTo);
 
+        $('#mem-jump-pc').click(function() {
+            displayMemory(lc3.pc);
+            $(this).blur();
+        });
+        $('#mem-scroll-up').click(function() {
+            displayMemory(currentMemoryLocation - 1);
+            $(this).blur();
+        });
+        $('#mem-scroll-down').click(function() {
+            displayMemory(currentMemoryLocation + 1);
+            $(this).blur();
+        });
+    })();
+
+
+    // Add the registers.
+    (function() {
+        var $registersPrimary = $('#registers-primary');
+        for (var i = 0; i < lc3.r.length; i++) {
+            var name = 'R' + i;
+            var editLinkage = {
+                type: 'register',
+                register: i,
+                name: name,
+            };
+            var $row = $('<div>')
+                .addClass('col-xs-6 col-sm-3');
+            var $name = $('<span>')
+                .addClass('register-name')
+                .text(name);
+            var $value = $('<span>')
+                .addClass('register-value hex-value hex-signed hex-editable')
+                .text(LC3Util.toHexString(lc3.getRegister(i)))
+                .data('edit-linkage', editLinkage);
+            $row.append($name).append(': ').append($value);
+            $registersPrimary.append($row);
+            registers[i] = $value;
+        }
+        var $registersSpecial = $('#registers-special');
+        for (var i = 0; i < lc3.specialRegisters.length; i++) {
+            var register = lc3.specialRegisters[i];
+            var name = register.toUpperCase();
+            var editLinkage = {
+                type: 'register',
+                register: register,
+                name: 'the ' + name,
+            };
+            var $row = $('<div>')
+                .addClass('col-xs-12 col-sm-3');
+            var $name = $('<span>')
+                .addClass('register-name')
+                .text(name);
+            var $value = $('<span>')
+                // note: special registers are unsigned
+                .addClass('register-value hex-value hex-editable')
+                .text(LC3Util.toHexString(lc3.getRegister(register)))
+                .data('edit-linkage', editLinkage);
+            $row.append($name).append(': ').append($value);
+            $registersSpecial.append($row);
+            registers[register] = $value;
+        }
+    })();
+
+    // Add the memory addresses and set up the memory display.
+    (function() {
+        var $cellTableBody = $('#memory-table tbody');
+        for (var i = 0; i < memoryRows.length; i++) {
+            var $row = $('<tr>');
+            $row.addClass('memory-cell');
+            var createCell = function(classes, value) {
+                var $cell = $('<td>');
+                var $contents = $('<span>');
+                for (var j = 0; j < classes.length; j++)
+                {
+                    $contents.addClass(classes[j]);
+                }
+                $contents.text(value);
+                $cell.append($contents);
+                return $cell;
+            };
+            $row.append(createCell(['memory-address', 'hex-value'], LC3Util.toHexString(i + 0x3000)));
+            $row.append(createCell(['memory-label'], ''));
+            $row.append(createCell(['memory-hex', 'hex-value', 'hex-signed', 'hex-editable'], 'x0000'));
+            $row.append(createCell(['memory-instruction'], 'NOP'));
+            $cellTableBody.append($row);
+            memoryRows[i] = $row;
+        }
+        displayMemory(currentMemoryLocation);
+    })();
+
+    // Configure the editable hex values.
     $('.hex-editable').popover({
         html: true,
+        container: 'body',
         title: function() {
             return 'Edit value of ' + $(this).data('edit-linkage').name;
         },
@@ -358,8 +349,7 @@ $(document).ready(function() {
                             .appendTo($inputBar);
             var $field = $('<input>')
                          .prop('type', 'text')
-                         .addClass('hex-value')
-                         .addClass('form-control')
+                         .addClass('hex-value form-control hex-edit-field')
                          .val($(this).text())
                          .appendTo($inputBar);
 
@@ -376,7 +366,7 @@ $(document).ready(function() {
             };
             var doSubmit = function() {
                 $oldThis.popover('hide');
-                var num = LC3Util.toUint16(parseNumber($field.val()));
+                var num = LC3Util.toUint16(LC3Util.parseNumber($field.val()));
                 updateValue(linkage, num);
             };
 
@@ -390,7 +380,7 @@ $(document).ready(function() {
             // Handler to validate when changed
             $field.on('input', function() {
                 var text = $(this).val();
-                var num = parseNumber(text);
+                var num = LC3Util.parseNumber(text);
 
                 // Determine: number valid?
                 var valid = !isNaN(num);
@@ -428,37 +418,60 @@ $(document).ready(function() {
         },
         trigger: 'click'
     }).on('shown.bs.popover', function() {
-        // Focus input field when the popup is ready.
-        // The DOM created is like this:
-        //   <span class=".hex-editable ...">$(this);</span>
-        //   <div class="popover...">...<input...></div>
-        // so we can use a plus-selector to find the input.
-        $(this).find('+ div input').focus();
+        $('.hex-edit-field').focus();
     });
 
-    $('.hex-value').tooltip( { title: hexValueTooltipTitle });
+    // Set up hex-value tooltips.
+    (function() {
+        var hexValueTooltipTitle = function() {
+            if ($(this).hasClass('hex-no-tooltip')) {
+                return;
+            }
+            var signed = $(this).hasClass('hex-signed');
+            var hex = $(this).text().replace(/[^0-9A-Fa-f]/g, '');
+            var num = parseInt("0x" + hex);
+            if (signed) {
+                num = LC3Util.toInt16(num);
+            }
+            var numString = num.toString().replace('-', '\u2212');
+            var prefix = 'decimal ';
+            var suffix = signed ? ' (signed)' : ' (unsigned)';
+            var titleText = prefix + numString + suffix;
+            return titleText;
+        };
+        $('.hex-value').tooltip( { title: hexValueTooltipTitle });
+    })();
 
-    $('#control-step').click(function() { lc3.nextInstruction(); });
+    // Set up execution control buttons.
+    (function() {
+        $('#control-step').click(function() { lc3.nextInstruction(); });
+    })();
 
-    $('#console-contents').focus(function() {
-        $(this).addClass('bg-info');
-    }).blur(function() {
-        $(this).removeClass('bg-info');
-    }).keypress(function(e) {
-        var key = e.which;
-        if (newlines.indexOf(key) !== -1) {
-            key = preferredNewline;
-        }
-        console.log(key);
-    });
+    // Set up console for key events.
+    (function() {
+        $('#console-contents').focus(function() {
+            $(this).addClass('bg-info');
+        }).blur(function() {
+            $(this).removeClass('bg-info');
+        }).keypress(function(e) {
+            var key = e.which;
+            if (newlines.indexOf(key) !== -1) {
+                key = preferredNewline;
+            }
+        });
+    })();
 
-    $('#newline-0a, #newline-0d').change(function() {
-        preferredNewline = parseInt($(this).data('newline'), 16);
-        $('#console-contents').focus();
-    });
-    $('#newline-0a').change();
+    // Link newline radio buttons to model
+    (function() {
+        $('#newline-0a, #newline-0d').change(function() {
+            preferredNewline = parseInt($(this).data('newline'), 16);
+            $('#console-contents').focus();
+        });
+        $('#newline-0a').change();
+    })();
 
 
+    // Activate!
     $('#container-wait').slideUp();
     $('#container-main').fadeIn();
 });

@@ -1,6 +1,35 @@
 window.LC3Util = {
 
     /*
+     * Parses a decimal or hexadecimal value, or returns NaN.
+     */
+    parseNumber: function(value) {
+        value = value.toLowerCase();
+        if (value.length == 0) {
+            return NaN;
+        }
+        var negative = false;
+        if (value[0] === '-') {
+            value = value.slice(1);
+            negative = true;
+        }
+        if (value[0] === 'x') {
+            var hexDigits = value.slice(1);
+            if (hexDigits.match(/[^0-9a-f]/)) {
+                return NaN;
+            }
+            var num = parseInt(hexDigits, 16);
+            return negative ? -num : num;
+        } else {
+            if (value.match(/[^0-9]/)) {
+                return NaN;
+            }
+            var num = parseInt(value);
+            return negative ? -num : num;
+        }
+    },
+
+    /*
      * Converts a number to a four-digit hexadecimal string with 'x' prefix.
      */
     toHexString: function(value, padLength) {
