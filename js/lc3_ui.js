@@ -230,6 +230,17 @@ $(document).ready(function() {
     };
 
     /*
+     * Scrolls to the PC if it is not already in view.
+     */
+    var followPC = function() {
+        var offset = lc3.pc - currentMemoryLocation;
+        if (offset < 0 || offset >= memoryRows.length) {
+            // Give a little bit of pre-context
+            displayMemory(lc3.pc - memoryRows.length / 4);
+        }
+    };
+
+    /*
      * Updates the given register display with the new value.
      */
     var updateRegister = function(register) {
@@ -294,6 +305,10 @@ $(document).ready(function() {
         // Update form controls disabled status.
         $('.disabled-running').prop('disabled', false);
         $('.disabled-paused').prop('disabled', true);
+
+        if ($('#follow-pc').prop('checked')) {
+            followPC();
+        }
 
         batchMode = false;
         refreshMemoryDisplay();
@@ -766,6 +781,9 @@ $(document).ready(function() {
     (function() {
         $('#control-step').click(function() {
             lc3.nextInstruction();
+            if ($('#follow-pc').prop('checked')) {
+                followPC();
+            }
         });
         $('#control-next').click(function() {
             // Keep going until we get back to this level.
