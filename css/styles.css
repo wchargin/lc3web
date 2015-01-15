@@ -15,6 +15,14 @@
     font-family: monospace;
 }
 
+/* Configuration for the memory address table */
+button.memory-dropdown {
+    padding: 0px 6px; /* default: 6px 12px */
+}
+.shrink-to-fit {
+    width: 1px;
+}
+
 .hidden-alert {
     display: none;
 }

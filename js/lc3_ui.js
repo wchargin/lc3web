@@ -43,8 +43,9 @@ $(document).ready(function() {
 
     /*
      * Array of the addresses with breakpoints assigned.
+     * This is a set whose keys are addresses and values are the literal true.
      */
-    var breakpoints = [];
+    var breakpoints = {};
 
     /*
      * Different characters to recognize as newlines
@@ -66,6 +67,15 @@ $(document).ready(function() {
             // If we have a preference, force it.
             return preferredNewline !== null ? preferredNewline : key;
         }
+    };
+
+    var toggleBreakpoint = function(address) {
+        if (address in breakpoints) {
+            delete breakpoints[address];
+        } else {
+            breakpoints[address] = true;
+        }
+        updateMemoryRow(address);
     };
 
     /*
@@ -132,11 +142,13 @@ $(document).ready(function() {
         var data = lc3.memory[address];
         var $row = memoryRows[row];
 
+        var $dropdown = $row.find('button.memory-dropdown');
         var $cellAddress = $row.find('span.memory-address');
         var $cellLabel = $row.find('span.memory-label');
         var $cellHex = $row.find('span.memory-hex');
         var $cellInstruction = $row.find('span.memory-instruction');
 
+        $dropdown.data('address', address);
         $cellAddress.text(LC3Util.toHexString(address));
         $cellLabel.text(lc3.addressToLabel[address] || '');
         $cellHex.text(LC3Util.toHexString(data));
@@ -152,7 +164,7 @@ $(document).ready(function() {
 
         // Mark breakpoints in red.
         var breakpointClass = 'danger';
-        if (breakpoints.indexOf(address) !== -1) {
+        if (address in breakpoints) {
             $row.addClass(breakpointClass);
         } else {
             $row.removeClass(breakpointClass);
@@ -336,21 +348,60 @@ $(document).ready(function() {
         for (var i = 0; i < memoryRows.length; i++) {
             var $row = $('<tr>');
             $row.addClass('memory-cell');
-            var createCell = function(classes, value) {
-                var $cell = $('<td>');
-                var $contents = $('<span>');
-                for (var j = 0; j < classes.length; j++)
-                {
-                    $contents.addClass(classes[j]);
-                }
-                $contents.text(value);
-                $cell.append($contents);
-                return $cell;
+
+            // First, we have the drop-down menu.
+            var $menu = $('<div>')
+                .addClass('btn-group dropdown')
+                .appendTo($('<td>').appendTo($row).addClass('shrink-to-fit'));
+            var $dropdown = $('<button>')
+                .addClass('btn btn-default dropdown-toggle memory-dropdown')
+                .attr('data-toggle', 'dropdown')
+                .append($('<span>').addClass('caret'))
+                .appendTo($menu);
+            var $dropdownList = $('<ul>')
+                .addClass('dropdown-menu')
+                .prop('role', 'menu')
+                .appendTo($menu);
+
+            // We can't use $dropdown in callbacks because of closure semantics.
+            // Attach it to the items instead.
+            // This helper function does that (and a bit more).
+            var createDropdownItem = function(name) {
+                return $('<a>').prop('href', '#').prop('role', 'button')
+                        .text(name)
+                        .data('dropdown', $dropdown)
+                        .appendTo($('<li>').appendTo($dropdownList));
             };
-            $row.append(createCell(['memory-address', 'hex-value'], LC3Util.toHexString(i + 0x3000)));
-            $row.append(createCell(['memory-label'], ''));
-            $row.append(createCell(['memory-hex', 'hex-value', 'hex-signed', 'hex-editable'], 'x0000'));
-            $row.append(createCell(['memory-instruction'], 'NOP'));
+
+            var $pc;
+            var $bp;
+            $pc = createDropdownItem('Move PC here').click(function() {
+                lc3.setRegister('pc', $(this).data('dropdown').data('address'));
+            });
+            $bp = createDropdownItem('Set breakpoint here').click(function() {
+                toggleBreakpoint($(this).data('dropdown').data('address'));
+            }).addClass('breakpoint-toggle');
+            // We want to update the breakpoint text when the dropdown activates.
+            // (It should be a toggle.)
+            $dropdown.click(function() {
+                var local$bp = $(this).parent().find('.breakpoint-toggle'); // again, closures
+                if ($(this).data('address') in breakpoints) {
+                    local$bp.text('Clear this breakpoint');
+                } else {
+                    local$bp.text('Set breakpoint here');
+                }
+            });
+
+            // Actual cell text values will be filled in later (updateMemoryRow).
+            var createCell = function(classes) {
+                return $('<td>').append($('<span>').addClass(classes));
+            };
+
+            var address = LC3Util.toHexString(i + currentMemoryLocation);
+            $row.append(createCell('memory-address hex-value').addClass('shrink-to-fit'));
+            $row.append(createCell('memory-label'));
+            $row.append(createCell('memory-hex hex-value hex-signed hex-editable'));
+            $row.append(createCell('memory-instruction'));
             $cellTableBody.append($row);
             memoryRows[i] = $row;
         }
