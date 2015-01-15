@@ -258,20 +258,31 @@ $(document).ready(function() {
                 // We'll get it at the next interval.
                 return;
             }
+
+            var done = false;
             lastInstructionComplete = false;
-            lc3.nextInstruction();
-            if (lc3.subroutineLevel <= target) {
-                // We've reached our target. Exit.
-                exitBatchMode();
-            }
-            if (lc3.pc in breakpoints) {
-                // We've hit a breakpoint. Exit.
-                exitBatchMode();
-            }
-            if (!lc3.isRunning()) {
-                // We've halted. Exit.
-                exitBatchMode();
-            }
+            do {
+                var op = lc3.nextInstruction();
+                if (lc3.subroutineLevel <= target) {
+                    // We've reached our target. Exit.
+                    done = true;
+                    exitBatchMode();
+                }
+                if (lc3.pc in breakpoints) {
+                    // We've hit a breakpoint. Exit.
+                    done = true;
+                    exitBatchMode();
+                }
+                if (!lc3.isRunning()) {
+                    // We've halted. Exit.
+                    done = true;
+                    exitBatchMode();
+                }
+                if (op.isIO) {
+                    // This is an IO instruction. Delay (but don't exit).
+                    done = true;
+                }
+            } while (!done);
             lastInstructionComplete = true;
         }, intervalDelay);
     };

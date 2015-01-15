@@ -49,6 +49,7 @@ var LC3 = function() {
     this.dsr =  0xFE04;
     this.ddr =  0xFE06;
     this.mcr =  0xFFFE;
+    this.ioLocations = [this.kbsr, this.kbdr, this.dsr, this.ddr];
 
     this.namedTrapVectors = {
         0x20: 'GETC',
@@ -106,6 +107,8 @@ LC3.prototype.nextInstruction = function() {
 
     // Display any output since last time.
     this.updateIO();
+
+    return op;
 };
 LC3.prototype.fetch = function() {
     this.ir = this.getMemory(this.pc);
@@ -267,6 +270,7 @@ LC3.prototype.fetchOperands = function(address) {
     return this.readMemory(address);
 };
 LC3.prototype.execute = function(op, address, operand) {
+    op.isIO = false;
     switch (op.opcode) {
         case 1: // ADD
         case 5: // AND
@@ -298,10 +302,19 @@ LC3.prototype.execute = function(op, address, operand) {
             this.subroutineLevel++;
             return null;
         case 2: // LD
+            if (this.ioLocations.indexOf(address) !== -1) {
+                op.isIO = true;
+            }
             return operand;
         case 10: // LDI
+            if (this.ioLocations.indexOf(operand) !== -1) {
+                op.isIO = true;
+            }
             return this.readMemory(operand);
         case 6: // LDR
+            if (this.ioLocations.indexOf(address) !== -1) {
+                op.isIO = true;
+            }
             return operand;
         case 14: // LEA
             return address;
@@ -316,12 +329,21 @@ LC3.prototype.execute = function(op, address, operand) {
             this.setRegister(6, r6 + 2);
             return null;
         case 3: // ST
+            if (this.ioLocations.indexOf(address) !== -1) {
+                op.isIO = true;
+            }
             this.writeMemory(address, this.getRegister(op.sr));
             return null;
         case 11: // STI
+            if (this.ioLocations.indexOf(operand) !== -1) {
+                op.isIO = true;
+            }
             this.writeMemory(operand, this.getRegister(op.sr));
             return null;
         case 7: // STR
+            if (this.ioLocations.indexOf(address) !== -1) {
+                op.isIO = true;
+            }
             this.writeMemory(address, this.getRegister(op.sr));
             return null;
         case 15: // TRAP
