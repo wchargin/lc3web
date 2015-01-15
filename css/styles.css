@@ -10,9 +10,18 @@
     font-weight: bold;
 }
 
+.memory-label span {
+    max-width: 100pt;
+    overflow-wrap: break-word;
+}
+
 .memory-address
 {
     font-family: monospace;
+}
+
+#memory-table {
+    overflow-x: scroll;
 }
 
 /* Configuration for the memory address table */
@@ -32,11 +41,8 @@ button.memory-dropdown {
     font-family: monospace;
 }
 
-.hex-edit-popover .input-group {
-    margin-bottom: 1em;
-}
-.hex-edit-popover li {
-    display: none;
+.hex-edit-popover .error-list {
+    margin: 1em 0;
 }
 #console-contents {
     height: 350px;
@@ -44,4 +50,15 @@ button.memory-dropdown {
 
 footer {
     min-height: 30px;
+}
+
+/* Lists of errors for input validation */
+.error-list {
+    color: gray;
+    list-style: none;
+    margin: 0;
+}
+.error-list li {
+    margin: 1em 0;
+    display: none;
 }

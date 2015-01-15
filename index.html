@@ -66,7 +66,7 @@
           <div class="input-group" id="mem-jumpto-group">
             <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-activate"><span class="glyphicon glyphicon-search"></span></button></span>
             <input type="text" id="mem-jumpto" class="form-control" placeholder="Jump to address or label">
-            <span class="input-group-btn"><button class="btn btn-default" id="mem-jumpto-go"><span class="glyphicon glyphicon-arrow-right"></span></button></span>
+            <span class="input-group-btn"><button class="btn btn-default" id="manage-labels-button"><span>Manage labels</span></button></span>
           </div>
         </div>
         <table class="table table-hover" id="memory-table">
@@ -159,6 +159,55 @@
     </div>
   </div>
 </div>
+
+<!-- Modal window for managing labels -->
+<div class="modal fade" id="label-manager">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Manage labels</h4>
+      </div>
+      <div class="modal-body">
+        <p>The following labels, including system labels, are currently set:</p>
+        <table id="labels-table" class="table">
+          <thead>
+            <tr><th>Label name</th><th>Address</th><th>Delete</th></tr>
+          </thead>
+          <tbody>
+            <tr id="new-label-row">
+              <td>
+                <div class="has-feedback">
+                  <input type="text" class="label-name form-control" placeholder="Type to create a new label" autofocus>
+                  <span class="glyphicon glyphicon-remove form-control-feedback error-feedback name-error"></span>
+                </div>
+                <ul class="error-list">
+                  <li class="name-empty">Name cannot be empty</li>
+                  <li class="name-conflict">Label name already exists</li>
+                </ul>
+              </td>
+              <td>
+                <div class="has-feedback">
+                  <input type="text" class="label-address form-control hex-value hex-no-tooltip">
+                  <span class="glyphicon glyphicon-remove form-control-feedback error-feedback address-error"></span>
+                </div>
+                <ul class="error-list">
+                  <li class="address-invalid">Invalid address</li>
+                  <li class="address-conflict">Address already has label</li>
+                </ul>
+              </td>
+              <td><button role="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer></footer>
 
 <!-- Bootstrap core JavaScript

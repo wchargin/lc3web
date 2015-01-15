@@ -363,7 +363,6 @@ $(document).ready(function() {
             $('#mem-jumpto').focus();
         });
         $('#mem-jumpto').on('input', performJumpTo);
-        $('#mem-jumpto-go').click(performJumpTo);
 
         $('#mem-jump-pc').click(function() {
             displayMemory(lc3.pc);
@@ -377,6 +376,158 @@ $(document).ready(function() {
             displayMemory(currentMemoryLocation + 1);
             $(this).blur();
         });
+
+        var $newLabelRow = $('#new-label-row');
+        $newLabelRow.find('.error-feedback').hide();
+        var $template = $newLabelRow.clone().prop('id', '');
+        $newLabelRow.find('button, .label-address').prop('disabled', true);
+        var createLabelRow = function(text, address, exists) {
+            var $row = $template.clone();
+            $row.insertBefore($newLabelRow);
+
+            var $name = $row.find('.label-name');
+            var $address = $row.find('.label-address');
+            var $remove = $row.find('button');
+
+            $name.val(text).focus();
+            $name.data('old-val', text);
+            $address.val(address !== null ? LC3Util.toHexString(address) : '');
+
+            // Data linkage (to get around closure semantics)
+            var linkage_ = {
+                name: $name,
+                address: $address,
+                remove: $remove,
+                hasError: {
+                    name: false,
+                    address: !exists,
+                },
+                previous: {
+                    exists: exists,
+                    labelName: exists ? text : null,
+                    labelAddress: exists ? address : null,
+                },
+            };
+            $name.data('linkage', linkage_);
+            $address.data('linkage', linkage_);
+            $remove.data('linkage', linkage_);
+
+            $name.on('input', function() {
+                var linkage = $(this).data('linkage');
+                var oldName = $(this).data('old-name');
+                var newName = $(this).val().trim();
+
+                var $cell = $(this).closest('td');
+
+                $(this).data('old-name', newName);
+                if (oldName === newName) {
+                    return;
+                }
+
+                var error = false;
+                console.log(newName in lc3.labelToAddress);
+
+                var empty = (newName.length === 0);
+                var conflict = (newName in lc3.labelToAddress);
+                error = empty || conflict;
+                if (empty) {
+                    $cell.find('.name-empty').slideDown();
+                } else {
+                    $cell.find('.name-empty').slideUp();
+                }
+                if (conflict) {
+                    $cell.find('.name-conflict').slideDown();
+                } else {
+                    $cell.find('.name-conflict').slideUp();
+                }
+
+                if (error) {
+                    $cell.addClass('has-error');
+                    $cell.find('.name-error').show();
+                } else {
+                    $cell.removeClass('has-error');
+                    $cell.find('.name-error').hide();
+                }
+                linkage.hasError.name = error;
+            });
+
+            $address.on('input', function() {
+                var linkage = $(this).data('linkage');
+                var num = LC3Util.parseNumber($(this).val());
+
+                var $cell = $(this).closest('td');
+
+                var error = false;
+                var invalid = isNaN(num) || num !== LC3Util.toUint16(num);
+                var conflict = (num !== linkage.previous.labelAddress && num in lc3.addressToLabel);
+                error = invalid || conflict;
+
+                if (invalid) {
+                    $cell.find('.address-invalid').slideDown();
+                } else {
+                    $cell.find('.address-invalid').slideUp();
+                }
+                if (conflict) {
+                    $cell.find('.address-conflict').slideDown();
+                } else {
+                    $cell.find('.address-conflict').slideUp();
+                }
+
+                if (error) {
+                    $cell.addClass('has-error');
+                    $cell.find('.address-error').show();
+                } else {
+                    $cell.removeClass('has-error');
+                    $cell.find('.address-error').hide();
+                }
+                linkage.hasError.address = error;
+            });
+
+            var update = function() {
+                var linkage = $(this).data('linkage');
+                if (linkage.hasError.name || linkage.hasError.address) {
+                    return;
+                }
+                var name = linkage.name.val().trim();
+                var address = LC3Util.parseNumber(linkage.address.val());
+                if (linkage.previous.exists) {
+                    lc3.unsetLabelGivenName(linkage.previous.labelName);
+                } else {
+                    linkage.previous.exists = true;
+                }
+                lc3.setLabel(address, name);
+                linkage.previous.labelName = name;
+                linkage.previous.labelAddress = address;
+            };
+            $name.on('input', update);
+            $address.on('input', update);
+
+
+            $remove.click(function() {
+                var linkage = $(this).data('linkage');
+                if (linkage.previous.exists !== null) {
+                    lc3.unsetLabelGivenName(linkage.previous.labelName);
+                }
+                $(this).closest('tr').remove();
+            });
+        };
+        $newLabelRow.find('.label-name').on('input', function() {
+            createLabelRow($(this).val(), null, false);
+            $(this).val('');
+        });
+
+        $('#manage-labels-button').click(function() {
+            $('#label-manager').modal('show');
+        });
+        $('#label-manager').on('show.bs.modal', function() {
+            // Remove all rows except for the last (the new label row)
+            $(this).find('tbody tr:not(:last)').remove();
+            // Recreate from memory
+            for (name in lc3.labelToAddress) {
+                createLabelRow(name, lc3.labelToAddress[name], true);
+            }
+        });
+
     })();
 
 
@@ -522,7 +673,7 @@ $(document).ready(function() {
                          .appendTo($inputBar);
 
             // List of errors.
-            var $ul =  $('<ul>').appendTo($('<div>').appendTo($container));
+            var $ul =  $('<ul>').appendTo($('<div>').appendTo($container)).addClass('error-list');
             var $msgValid = $('<li>').text('Invalid number').appendTo($ul);
 
             // Buttons to submit or cancel.
@@ -596,7 +747,8 @@ $(document).ready(function() {
                 return;
             }
             var signed = $(this).hasClass('hex-signed');
-            var hex = $(this).text().replace(/[^0-9A-Fa-f]/g, '');
+            var text = $(this).text() || $(this).val();
+            var hex = text.replace(/[^0-9A-Fa-f]/g, '');
             var num = parseInt("0x" + hex);
             if (signed) {
                 num = LC3Util.toInt16(num);
@@ -607,7 +759,7 @@ $(document).ready(function() {
             var titleText = prefix + numString + suffix;
             return titleText;
         };
-        $('.hex-value').tooltip( { title: hexValueTooltipTitle });
+        $('.hex-value').not('.hex-no-tooltip').tooltip( { title: hexValueTooltipTitle });
     })();
 
     // Set up execution control buttons.
