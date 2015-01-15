@@ -2,22 +2,44 @@ $(document).ready(function() {
     var lc3 = new LC3();
     window.lc3 = lc3; // for ease of debugging
 
-    // Preload the LC3
+    // Preload the LC3 (this is for ease of testing only)
     (function() {
         lc3.setLabel(0x3000, 'START');
-        lc3.memory[0x3000] = 0x5260;
-        lc3.memory[0x3001] = 0x5920;
-        lc3.memory[0x3002] = 0x192A;
-        lc3.memory[0x3003] = 0xE4FC;
-        lc3.memory[0x3004] = 0x6680;
-        lc3.memory[0x3005] = 0x14A1;
-        lc3.memory[0x3006] = 0x1243;
-        lc3.memory[0x3007] = 0x193F;
-        lc3.memory[0x3008] = 0x03FB;
-        lc3.memory[0x3009] = 0xF025;
-        lc3.memory[0xFDFD] = 0x2004;
-        lc3.memory[0xFDFE] = 0x3007;
-        lc3.memory[0xFDFF] = 0x01FD;
+        // Load addnums
+        (function() {
+            lc3.memory[0x3000] = 0x5260;
+            lc3.memory[0x3001] = 0x5920;
+            lc3.memory[0x3002] = 0x192A;
+            lc3.memory[0x3003] = 0xE4FC;
+            lc3.memory[0x3004] = 0x6680;
+            lc3.memory[0x3005] = 0x14A1;
+            lc3.memory[0x3006] = 0x1243;
+            lc3.memory[0x3007] = 0x193F;
+            lc3.memory[0x3008] = 0x03FB;
+            lc3.memory[0x3009] = 0xF025;
+        });//();
+        // Load trap echo
+        (function() {
+            lc3.memory[0x0030] = 0x2004; // use with TRAP x30
+            lc3.memory[0x2000] = 0xFE00;
+            lc3.memory[0x2001] = 0xFE02;
+            lc3.memory[0x2002] = 0xFE04;
+            lc3.memory[0x2003] = 0xFE06;
+            lc3.memory[0x2004] = 0x25FB;
+            lc3.memory[0x2005] = 0x27FB;
+            lc3.memory[0x2006] = 0x29FB;
+            lc3.memory[0x2007] = 0x2BFB;
+            lc3.memory[0x2008] = 0x6080;
+            lc3.memory[0x2009] = 0x05FE;
+            lc3.memory[0x200A] = 0x62C0;
+            lc3.memory[0x200B] = 0x6100;
+            lc3.memory[0x200C] = 0x05FE;
+            lc3.memory[0x200D] = 0x7340;
+            lc3.memory[0x200E] = 0xC1C0;
+            lc3.memory[0x3000] = 0xF030;
+            lc3.memory[0x3001] = 0xF025;
+        })();
+
         lc3.setRegister(0, 42);
         lc3.setRegister(1, 68);
         for (var i = 0; i < 10; i++) {
@@ -53,6 +75,31 @@ $(document).ready(function() {
      */
     var newlines = [0x0A, 0x0D];
     var preferredNewline = 0x0A;
+
+    /*
+     * If this is true, the DOM will not update.
+     * Use when executing a bunch of instructions;
+     * just update once at the end.
+     */
+    var batchMode = false;
+
+    /*
+     * If in batch mode, the subroutine level at which to exit.
+     */
+    var target = -1;
+
+    /*
+     * The value returned by setInterval when entering batch mode.
+     */
+    var intervalID;
+    var intervalDelay = 5; // in milliseconds; constant
+
+    /*
+     * A rudimentary lock for synchronizing batch mod calls.
+     * The LC-3 should execute far faster than the interval Delay,
+     * so this shouldn't matter...but better safe than sorry.
+     */
+    var lastInstructionComplete;
 
     /*
      * Standardize a character code (input is integer, not string).
@@ -105,6 +152,9 @@ $(document).ready(function() {
      * Listen for memory changes.
      */
     lc3.addListener(function (ev) {
+        if (batchMode && ev.type !== 'keyout') {
+            return;
+        }
         var type = ev.type;
         if (type === 'memset') {
             var address = ev.address;
@@ -114,7 +164,7 @@ $(document).ready(function() {
                 // We might have to change the highlighting of rows.
                 refreshMemoryDisplay();
             }
-            registers[ev.register].text(LC3Util.toHexString(ev.newValue));
+            updateRegister(ev.register);
         } else if (type === 'labelset' || type === 'labelunset') {
             // Easiest to just reset the display.
             refreshMemoryDisplay();
@@ -155,11 +205,11 @@ $(document).ready(function() {
         $cellInstruction.text(lc3.instructionAddressToString(address));
 
         // Highlight the program counter.
-        var pcClass = 'active';
+        var pcClass = 'btn-primary';
         if (lc3.pc === address) {
-            $row.addClass(pcClass);
+            $dropdown.addClass(pcClass);
         } else {
-            $row.removeClass(pcClass);
+            $dropdown.removeClass(pcClass);
         }
 
         // Mark breakpoints in red.
@@ -170,6 +220,7 @@ $(document).ready(function() {
             $row.removeClass(breakpointClass);
         }
     };
+
     /*
      * Display a block of memory starting at the given location.
      * All rows will be updated.
@@ -213,6 +264,63 @@ $(document).ready(function() {
      */
     var refreshMemoryDisplay = function() {
         displayMemory(currentMemoryLocation);
+    };
+
+    /*
+     * Updates the given register display with the new value.
+     */
+    var updateRegister = function(register) {
+            registers[register].text(LC3Util.toHexString(lc3.getRegister(register)));
+    };
+
+    var refreshRegisters = function() {
+        for (var registerID in registers) {
+            updateRegister(registerID);
+        }
+    };
+
+    /*
+     * Enter batch mode. The 'target' variable should already be set.
+     */
+    var enterBatchMode = function() {
+        batchMode = true;
+
+        // Update form controls disabled status.
+        $('.disabled-running').prop('disabled', true);
+        $('.disabled-paused').prop('disabled', false);
+
+        lastInstructionComplete = true;
+        this.intervalID = setInterval(function() {
+            if (!lastInstructionComplete) {
+                // We'll get it at the next interval.
+                return;
+            }
+            lastInstructionComplete = false;
+            lc3.nextInstruction();
+            if (lc3.subroutineLevel <= target) {
+                // We've reached our target. Exit.
+                exitBatchMode();
+            }
+            if (lc3.pc in breakpoints) {
+                // We've hit a breakpoint. Exit.
+                exitBatchMode();
+            }
+            lastInstructionComplete = true;
+        }, intervalDelay);
+    };
+
+    /*
+     * Exit batch mode and refresh all displays to account for any changes.
+     */
+    var exitBatchMode = function() {
+        // Update form controls disabled status.
+        $('.disabled-running').prop('disabled', false);
+        $('.disabled-paused').prop('disabled', true);
+
+        this.batchMode = false;
+        refreshMemoryDisplay();
+        refreshRegisters();
+        clearInterval(this.intervalID);
     };
 
     /*
@@ -526,7 +634,29 @@ $(document).ready(function() {
 
     // Set up execution control buttons.
     (function() {
-        $('#control-step').click(function() { lc3.nextInstruction(); });
+        $('#control-step').click(function() {
+            lc3.nextInstruction();
+        });
+        $('#control-next').click(function() {
+            // Keep going until we get back to this level.
+            target = lc3.subroutineLevel;
+            enterBatchMode();
+        });
+        $('#control-continue').click(function() {
+            // Machine was paused or hit a breakpoint.
+            // Keep the original target level.
+            enterBatchMode();
+        });
+        $('#control-finish').click(function() {
+            // Keep going until we go one level up.
+            target = lc3.subroutineLevel - 1;
+            enterBatchMode();
+        });
+        $('#control-pause').click(function() {
+            $(this).prop('disabled', true);
+            exitBatchMode();
+        });
+        $('#control-buttons button').tooltip();
     })();
 
     // Set up console for key events and clear buttons.
@@ -549,7 +679,6 @@ $(document).ready(function() {
 
         updateBufferCount();
     })();
-
 
     // Link newline radio buttons to model
     (function() {

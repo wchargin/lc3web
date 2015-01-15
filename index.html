@@ -124,12 +124,15 @@
           </div>
         </div>
       </div>
-      <div class="text-center">
+      <div class="text-center button-toolbar" id="control-buttons">
         <div class="btn-group" role="group">
-          <button type="button" disabled="disabled" class="btn btn-default">Continue</button>
-          <button type="button" class="btn btn-default" id="control-step">Step</button>
-          <button type="button" disabled="disabled" class="btn btn-default">Next</button>
-          <button type="button" disabled="disabled" class="btn btn-default">Finish</button>
+          <button type="button" class="btn btn-default disabled-running" id="control-step" title="Execute the next instruction">Step</button>
+          <button type="button" class="btn btn-default disabled-running" id="control-next" title="Fully execute the next instruction or subroutine">Next</button>
+          <button type="button" class="btn btn-default disabled-running" id="control-continue" title="Continue execution after being paused">Continue</button>
+          <button type="button" class="btn btn-default disabled-running" id="control-finish" title="Finish execution of the current subroutine">Finish</button>
+        </div>
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-default disabled-paused" id="control-pause" title="Pause execution" disabled="disabled">Pause</button>
         </div>
       </div>
     </div>

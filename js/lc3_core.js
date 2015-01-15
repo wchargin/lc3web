@@ -53,6 +53,9 @@ var LC3 = function() {
 
     // A queue of keys that the user has entered, but have not been processed.
     this.bufferedKeys = new Queue();
+
+    // The current subroutine depth. Used for next/continue.
+    this.subroutineLevel = 0;
 };
 
 LC3.prototype.formatAddress = function(address) {
@@ -274,10 +277,16 @@ LC3.prototype.execute = function(op, address, operand) {
             return null;
         case 12: // JMP, RET
             this.setRegister('pc', address);
+            // internal: decrement depth on return
+            if (op.opname === 'RET') {
+                this.subroutineLevel--;
+            }
             return null;
         case 4: // JSR, JSRR
             this.setRegister(7, this.pc);
             this.setRegister('pc', address);
+            // internal: also increment the depth
+            this.subroutineLevel++;
             return null;
         case 2: // LD
             return operand;
@@ -307,7 +316,10 @@ LC3.prototype.execute = function(op, address, operand) {
             this.writeMemory(address, this.getRegister(op.sr));
             return null;
         case 15: // TRAP
-            this.setRegister('pc', address);
+            this.setRegister(7, this.pc);
+            this.setRegister('pc', operand);
+            // internal: also increment the depth
+            this.subroutineLevel++;
             return null;
         default:
             return undefined;
@@ -391,7 +403,7 @@ LC3.prototype.instructionToString = function(inAddress, instruction) {
                 return 'JMP ' + reg(baseR);
             }
         case 4: // JSR, JSRR
-            if (mode === 'pcOffset') {
+            if (op.mode === 'pcOffset') {
                 // JSR
                 return prefix + this.formatAddress(address);
             } else {
