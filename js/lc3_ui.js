@@ -5,46 +5,9 @@ $(document).ready(function() {
     // Preload the LC3 (this is for ease of testing only)
     (function() {
         lc3.setLabel(0x3000, 'START');
-        // Load addnums
-        (function() {
-            lc3.memory[0x3000] = 0x5260;
-            lc3.memory[0x3001] = 0x5920;
-            lc3.memory[0x3002] = 0x192A;
-            lc3.memory[0x3003] = 0xE4FC;
-            lc3.memory[0x3004] = 0x6680;
-            lc3.memory[0x3005] = 0x14A1;
-            lc3.memory[0x3006] = 0x1243;
-            lc3.memory[0x3007] = 0x193F;
-            lc3.memory[0x3008] = 0x03FB;
-            lc3.memory[0x3009] = 0xF025;
-        });//();
-        // Load trap echo
-        (function() {
-            lc3.memory[0x0030] = 0x2004; // use with TRAP x30
-            lc3.memory[0x2000] = 0xFE00;
-            lc3.memory[0x2001] = 0xFE02;
-            lc3.memory[0x2002] = 0xFE04;
-            lc3.memory[0x2003] = 0xFE06;
-            lc3.memory[0x2004] = 0x25FB;
-            lc3.memory[0x2005] = 0x27FB;
-            lc3.memory[0x2006] = 0x29FB;
-            lc3.memory[0x2007] = 0x2BFB;
-            lc3.memory[0x2008] = 0x6080;
-            lc3.memory[0x2009] = 0x05FE;
-            lc3.memory[0x200A] = 0x62C0;
-            lc3.memory[0x200B] = 0x6100;
-            lc3.memory[0x200C] = 0x05FE;
-            lc3.memory[0x200D] = 0x7340;
-            lc3.memory[0x200E] = 0xC1C0;
-            lc3.memory[0x3000] = 0xF030;
-            lc3.memory[0x3001] = 0xF025;
-        })();
-
-        lc3.setRegister(0, 42);
-        lc3.setRegister(1, 68);
-        for (var i = 0; i < 10; i++) {
-            lc3.memory[0x3100 + i] = 2 * i + 1;
-        }
+        lc3.setMemory(0x3000, 0xF020);
+        lc3.setMemory(0x3001, 0xF021);
+        lc3.setMemory(0x3002, 0x0FFD);
     })();
 
     /*
@@ -305,6 +268,10 @@ $(document).ready(function() {
                 // We've hit a breakpoint. Exit.
                 exitBatchMode();
             }
+            if (!lc3.isRunning()) {
+                // We've halted. Exit.
+                exitBatchMode();
+            }
             lastInstructionComplete = true;
         }, intervalDelay);
     };
@@ -317,7 +284,7 @@ $(document).ready(function() {
         $('.disabled-running').prop('disabled', false);
         $('.disabled-paused').prop('disabled', true);
 
-        this.batchMode = false;
+        batchMode = false;
         refreshMemoryDisplay();
         refreshRegisters();
         clearInterval(this.intervalID);
@@ -653,7 +620,6 @@ $(document).ready(function() {
             enterBatchMode();
         });
         $('#control-pause').click(function() {
-            $(this).prop('disabled', true);
             exitBatchMode();
         });
         $('#control-buttons button').tooltip();

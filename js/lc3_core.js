@@ -1,8 +1,9 @@
 var LC3 = function() {
-    // Create and initialize memory
+    // Create and initialize memory; load from OS if possible
     this.memory = new Array(0x10000);
     for (var i = 0; i < this.memory.length; i++) {
-        this.memory[i] = 0;
+        var osEntry = lc3os[i];
+        this.memory[i] = (osEntry === undefined) ? 0 : osEntry;
     }
 
     // Listeners for when registers, memory, etc. are changed
@@ -32,6 +33,12 @@ var LC3 = function() {
     this.labelToAddress = {};
     this.addressToLabel = {};
 
+    // Load OS symbols
+    for (var label in lc3osSymbols) {
+        var address = lc3osSymbols[label];
+        this.setLabel(address, label);
+    }
+
     // Exclusive upper bound for normal memory
     // Memory address 0xFE00 and up are mapped to devices
     this.maxStandardMemory = 0xFE00;
@@ -41,6 +48,7 @@ var LC3 = function() {
     this.kbdr = 0xFE02;
     this.dsr =  0xFE04;
     this.ddr =  0xFE06;
+    this.mcr =  0xFFFE;
 
     this.namedTrapVectors = {
         0x20: 'GETC',
@@ -74,6 +82,7 @@ LC3.prototype.getConditionCode = function() {
     }
 }
 LC3.prototype.setConditionCode = function(value) {
+    value = LC3Util.toInt16(value);
     var n = value < 0;
     var p = value > 0;
     var z = !n && !p;
@@ -344,6 +353,7 @@ LC3.prototype.storeResult = function(op, result) {
         case 14: // LEA
             this.setRegister(op.dr, result);
             this.setConditionCode(result);
+            break;
         case 8: // RTI
             // Nothing to do here.
             return;
@@ -603,3 +613,10 @@ LC3.prototype.clearBufferedKeys = function() {
     this.bufferedKeys = new Queue();
     this.notifyListeners({ type: 'bufferchange' });
 };
+
+/*
+ * Determines whether the clock is running.
+ */
+LC3.prototype.isRunning = function() {
+    return (this.getMemory(this.mcr) & 0x8000) !== 0;
+}
