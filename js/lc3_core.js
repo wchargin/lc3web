@@ -268,8 +268,7 @@ LC3.prototype.execute = function(op, address, operand) {
             var doBreak = (op.n && cc < 0)
                        || (op.z && cc === 0)
                        || (op.p && cc > 0);
-            if (doBreak || !(op.n || op.z || op.p)) {
-                // empty BR = BRnzp
+            if (doBreak) {
                 this.setRegister('pc', address);
             }
             return null;
@@ -373,7 +372,10 @@ LC3.prototype.instructionToString = function(inAddress, instruction) {
         case 9: // NOT
             return prefix + [reg(op.dr), reg(op.sr)].join(', ');
         case 0: // BR
-            if (op.raw === 0x0000) {
+            // If all the NZP bits are zero,
+            // or it just jumps to the next location,
+            // then it's a NOP.
+            if ((op.raw & 0x0E00) === 0 || (op.offset === 0)) {
                 return 'NOP';
             }
             var opname = 'BR';
