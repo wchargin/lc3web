@@ -395,7 +395,7 @@ $(document).ready(function() {
         var $newLabelRow = $('#new-label-row');
         $newLabelRow.find('.error-feedback').hide();
         var $template = $newLabelRow.clone().prop('id', '');
-        $newLabelRow.find('button, .label-address').prop('disabled', true);
+        $newLabelRow.find('button, .label-address').remove();
         var createLabelRow = function(text, address, exists) {
             var $row = $template.clone();
             $row.insertBefore($newLabelRow);
