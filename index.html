@@ -99,8 +99,7 @@
                   <span class="sr-only">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu" role="menu">
-                  <li><a href="#" role="button" id="mem-upload-object">Object file</a></li>
-                  <li><a href="#" role="button" id="mem-upload-symbol">Symbol table</a></li>
+                  <li><a href="#" role="button" id="mem-upload-object">Upload object or symbol table</a></li>
                   <li class="divider"></li>
                   <li><a href="#" role="button" id="mem-reload-os">Reload OS</a></li>
                 </ul>
@@ -217,20 +216,42 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Load object file</h4>
+        <h4 class="modal-title">Upload files</h4>
       </div>
       <div class="modal-body">
+        <p>
+        Upload <strong>object files (.obj)</strong> and <strong>symbol files (.sym)</strong> by dragging them onto the box below.
+        You can upload multiple files at once.
+        </p>
+        <p>
+        You must convert any ASCII binary (.bin) or hexadecimal (.hex) files, and assemble any assembly language (.asm) programs, before uploading.
+        </p>
         <div class="drop-holder">
           <div class="drop-box">
-            <span>Drop object file here</span>
+            <span>Drop files here</span>
           </div>
         </div>
-        <div class="alert alert-warning confirm-extension">
-          <strong>Hold on</strong>&mdash;this file's extension is <strong id="extension-contents"></strong>.
-          <span id="extension-feedback"></span>
+        <div class="alert alert-warning" id="invalid-alert">
+          <strong>Hold on!</strong>
+          The following <span id="warning-file-noun"></span> couldn't be recognized and <strong>won't be processed</strong>:
+          <ul id="invalid-files">
+          </ul>
           <div class="btn-toolbar alert-buttons" role="toolbar">
-            <button class="btn btn-primary" id="extension-confirm">Yep, use it</button>
-            <button class="btn btn-default" id="extension-again">Choose another file</button>
+            <button class="btn btn-default" id="invalid-dismiss">Dismiss</button>
+          </div>
+        </div>
+        <div class="alert alert-success" id="confirm-alert">
+          The following <span id="success-file-noun"></span> <span id="success-file-verb"></span> <strong>ready to be processed</strong>:
+          <ul id="success-files">
+          </ul>
+          <div class="btn-toolbar alert-buttons" role="toolbar">
+            <button class="btn btn-primary" id="success-confirm">Process Files</button>
+          </div>
+        </div>
+        <div id="upload-in-progress">
+          <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: 100%;">
+            </div>
           </div>
         </div>
       </div>

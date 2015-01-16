@@ -86,5 +86,8 @@ footer {
 }
 .alert-buttons {
     text-align: right;
+}
+
+#load-object .alert {
     margin-top: 1em;
 }

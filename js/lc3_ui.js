@@ -841,121 +841,188 @@ $(document).ready(function() {
         });
     })();
 
-    // Upload
-    var invokeUploadModal = function(title, callback, extensionWarnings) {
-        extensionWarnings = extensionWarnings || {};
+    // Configure the upload modal
+    (function() {
+        var importObj = function(file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var dataString = e.target.result;
+                var data = new Array(dataString.length / 2);
+                for (var i = 0; i < data.length; i ++) {
+                    var lo = dataString.charCodeAt(2 * i + 1);
+                    var hi = dataString.charCodeAt(2 * i) << 8;
+                    data[i] = lo | hi;
+                }
+                var orig = data[0];
+                for (var i = 1; i < data.length; i++) {
+                    var address = orig + i - 1;
+                    var value = data[i];
+                    lc3.setMemory(address, value);
+                }
+            };
+            reader.readAsBinaryString(file);
+        };
+        var importSym = function(file) {
+            // TODO
+            console.log('Symbol table import not yet supported.');
+        };
+        var extensionData = {
+            whitelist: {
+                'obj': importObj,
+                'sym': importSym,
+            },
+            blacklist: {
+                'bin': '(convert to object file first)',
+                'hex': '(convert to object file first)',
+                'asm': '(assemble first)',
+            },
+        };
 
         var $modal = $('#load-object');
         var $dropArea = $modal.find('.drop-holder');
         var $dropBox = $modal.find('.drop-box');
-        var $warning = $modal.find('.confirm-extension');
+        var $invalid = $modal.find('#invalid-alert');
+        var $invalidList = $invalid.find('ul');
+        var $success = $modal.find('#confirm-alert');
+        var $successList = $success.find('ul');
+        var $progress = $modal.find('#upload-in-progress');
 
-        // Reset from any previous invocations
-        $dropArea.show();
-        $warning.hide();
+        // Maps extensions to lists of files. For example:
+        // { 'obj': [<file foo.obj>, <file bar.obj>], 'sym': [<file baz.sym>] }
+        var filesToProcess = {};
+
+        // Flat set of files (keys, mapped to true).
+        var existingFiles = {};
 
         // mostly copied from:
         // http://stackoverflow.com/a/6480317/732016
-        $dropArea.data('accept-drop', true).bind({
+        $dropArea.bind({
             dragover: function() {
-                if ($dropArea.data('accept-drop')) {
-                    $dropBox.addClass('hover');
-                }
+                $dropBox.addClass('hover');
                 return false;
             },
             dragend: function() {
-                if ($dropArea.data('accept-drop')) {
-                    $dropBox.removeClass('hover');
-                }
+                $dropBox.removeClass('hover');
                 return false;
             },
             dragleave: function() {
-                if ($dropArea.data('accept-drop')) {
-                    $dropBox.removeClass('hover');
-                }
+                $dropBox.removeClass('hover');
                 return false;
             },
             drop: function(e) {
-                if (!$dropArea.data('accept-drop')) {
-                    return;
-                }
-                $dropArea.data('accept-drop', false);
                 $dropBox.removeClass('hover');
                 e = e || window.event;
                 e.preventDefault();
                 e = e.originalEvent || e;
 
                 var files = (e.files || e.dataTransfer.files);
-                var file = files[0];
-                if (!file) {
+                if (!files) {
                     return;
                 }
 
-                var filename = file.name;
-                var lowercaseName = filename.toLowerCase();
-                var warningSuffixes = ['bin', 'hex', 'asm', 'txt'];
-                var suffix = lowercaseName.replace(/.*\.([^.]*)/, '$1');
-                var warn = false;
-                if (extensionWarnings.blacklist) {
-                    if (extensionWarnings.blacklist.indexOf(suffix) !== -1) {
-                        warn = true;
+                for (var i = 0; i < files.length; i++) {
+                    var file = files[i];
+                    var filename = file.name;
+                    if (filename in existingFiles) {
+                        continue;
+                    }
+
+                    var lowercaseName = filename.toLowerCase();
+                    var suffix = lowercaseName.replace(/.*\.([^.]*)/, '$1');
+
+                    var invalid = false;
+                    var invalidMessage = null;
+                    if (suffix in extensionData.blacklist) {
+                        invalid = true;
+                        invalidMessage = extensionData.blacklist[suffix];
+                    } else if (!(suffix in extensionData.whitelist)) {
+                        invalid = true;
+                        invalidMessage = '(file extension not recognized)';
+                    }
+                    if (invalid) {
+                        var $li = $('<li>')
+                            .append($('<strong>').text(filename || ''))
+                            .append(' ')
+                            .append($('<span>').text(invalidMessage || ''))
+                            .data('file-id', file)
+                            .appendTo($invalidList);
+                        $invalid.slideDown();
+                        $invalid.find('#warning-file-noun').text(
+                                $invalidList.find('li').length === 1 ? 'file' : 'files');
+                    } else {
+                        var $li = $('<li>')
+                            .append($('<strong>').text(filename || ''))
+                            .appendTo($successList);
+                        $success.slideDown();
+                        var successOne = $successList.find('li').length === 1;
+                        $success.find('#success-file-noun').text(successOne ? 'file' : 'files');
+                        $success.find('#success-file-verb').text(successOne ? 'is' : 'are');
+
+                        var list = filesToProcess[suffix] || [];
+                        list.push(file);
+                        filesToProcess[suffix] = list;
+                        existingFiles[filename] = true;
                     }
                 }
-                if (extensionWarnings.whitelist) {
-                    if (extensionWarnings.whitelist.indexOf(suffix) === -1) {
-                        warn = true;
-                    }
-                }
-                if (warn) {
-                    $warning.slideDown();
-                    $warning.find('#extension-feedback').text(extensionWarnings.feedback || '');
-                    $warning.find('#extension-contents').text(suffix.toUpperCase());
-                    $warning.find('#extension-confirm').click(function() {
-                        $warning.slideUp();
-                        $modal.modal('hide');
-                        callback(file);
-                    });
-                    $warning.find('#extension-again').click(function() {
-                        $dropArea.data('accept-drop', true);
-                        $dropArea.slideDown();
-                        $warning.slideUp();
-                    });
-                } else {
-                    $modal.modal('hide');
-                    callback(file);
-                }
-                $dropArea.animate({ height: 'toggle', opacity: 'toggle'});
             }
         });
-        $modal.modal();
-    };
+        $invalid.find('#invalid-dismiss').click(function() {
+            $invalid.slideUp(function() {
+                $invalidList.empty();
+            });
+        });
+        $('#success-confirm').click(function() {
+            $dropArea.slideUp();
+            $invalid.slideUp();
+            $success.slideUp();
+            $progress.slideDown();
+
+            var $bar = $progress.find('.progress-bar');
+            $bar.addClass('active');
+            $bar.css('width', 0);
+
+            $bar.addClass('progress-bar-info');
+            $bar.removeClass('progress-bar-success');
+            $bar.addClass('progress-bar-striped');
+
+            var done = 0;
+            var count = 0;
+            for (var type in filesToProcess) {
+                count += filesToProcess[type].length;
+            }
+
+            for (var type in filesToProcess) {
+                var files = filesToProcess[type];
+                var callback = extensionData.whitelist[type];
+                for (var i = 0; i < files.length; i++) {
+                    callback(files[i]);
+                }
+                done++;
+                $bar.css('width', 100 * done / count + '%');
+            }
+
+            $bar.removeClass('active');
+            $bar.addClass('progress-bar-success');
+            $bar.removeClass('progress-bar-info');
+            $bar.removeClass('progress-bar-striped');
+            $modal.modal('hide');
+        });
+        $modal.on('show.bs.modal', function() {
+            filesToProcess = {};
+            existingFiles = {};
+            $dropArea.show();
+            $invalid.hide();
+            $invalidList.empty();
+            $success.hide();
+            $successList.empty();
+            $progress.hide();
+        });
+    })();
 
     // Upload object
     (function() {
         $('#mem-upload-object').click(function() {
-            var extensionWarnings = {
-                feedback: 'Are you sure it\'s an object file? That is, did you assemble it or convert it from base-2 or hexadecimal ASCII?',
-                blacklist: ['bin', 'hex', 'asm', 'txt'],
-            };
-            invokeUploadModal('Load object file', function(file) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    var dataString = e.target.result;
-                    var data = new Array(dataString.length / 2);
-                    for (var i = 0; i < data.length; i ++) {
-                        var hi = dataString.charCodeAt(2 * i) << 8;
-                        var lo = dataString.charCodeAt(2 * i + 1);
-                        data[i] = lo | hi;
-                    }
-                    var orig = data[0];
-                    for (var i = 1; i < data.length; i++) {
-                        var address = orig + i - 1;
-                        var value = data[i];
-                        lc3.setMemory(address, value);
-                    }
-                };
-                reader.readAsBinaryString(file);
-            }, extensionWarnings);
+            $('#load-object').modal();
         });
     })();
 
