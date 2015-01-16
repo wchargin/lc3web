@@ -620,7 +620,7 @@ LC3.prototype.updateIO = function() {
     var dsrValue = this.getMemory(this.dsr);
     var dsrReady = (dsrValue & 0x8000) === 0;
     if (dsrReady) {
-        var key = this.getMemory(this.ddr);
+        var key = this.getMemory(this.ddr) & 0x00FF;
         var ev = {
             type: 'keyout',
             value: key,

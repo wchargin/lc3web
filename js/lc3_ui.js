@@ -443,7 +443,8 @@ $(document).ready(function() {
                 console.log(newName in lc3.labelToAddress);
 
                 var empty = (newName.length === 0);
-                var conflict = (newName in lc3.labelToAddress);
+                var conflict = (newName in lc3.labelToAddress)
+                    && (newName !== linkage.previous.labelName);
                 error = empty || conflict;
                 if (empty) {
                     $cell.find('.name-empty').slideDown();
