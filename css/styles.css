@@ -62,3 +62,29 @@ footer {
     margin: 1em 0;
     display: none;
 }
+
+/* File drop setup */
+.drop-holder {
+    text-align: center;
+}
+.drop-box {
+    margin: 0 auto;
+    display: table;
+    width: 196px;
+    height: 196px;
+    border: 8px gray dashed;
+    color: gray;
+}
+.drop-box span {
+    display: table-cell;
+    vertical-align: middle;
+    font-size: 200%;
+}
+.drop-box.hover {
+    color: #337ab7;
+    border-color: #337ab7;
+}
+.alert-buttons {
+    text-align: right;
+    margin-top: 1em;
+}

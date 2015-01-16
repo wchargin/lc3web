@@ -211,6 +211,36 @@
   </div>
 </div>
 
+<!-- Modal to load with object file -->
+<div class="modal fade" id="load-object">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Load object file</h4>
+      </div>
+      <div class="modal-body">
+        <div class="drop-holder">
+          <div class="drop-box">
+            <span>Drop object file here</span>
+          </div>
+        </div>
+        <div class="alert alert-warning confirm-extension">
+          <strong>Hold on</strong>&mdash;this file's extension is <strong id="extension-contents"></strong>.
+          <span id="extension-feedback"></span>
+          <div class="btn-toolbar alert-buttons" role="toolbar">
+            <button class="btn btn-primary" id="extension-confirm">Yep, use it</button>
+            <button class="btn btn-default" id="extension-again">Choose another file</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer></footer>
 
 <!-- Bootstrap core JavaScript

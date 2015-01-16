@@ -841,6 +841,124 @@ $(document).ready(function() {
         });
     })();
 
+    // Upload
+    var invokeUploadModal = function(title, callback, extensionWarnings) {
+        extensionWarnings = extensionWarnings || {};
+
+        var $modal = $('#load-object');
+        var $dropArea = $modal.find('.drop-holder');
+        var $dropBox = $modal.find('.drop-box');
+        var $warning = $modal.find('.confirm-extension');
+
+        // Reset from any previous invocations
+        $dropArea.show();
+        $warning.hide();
+
+        // mostly copied from:
+        // http://stackoverflow.com/a/6480317/732016
+        $dropArea.data('accept-drop', true).bind({
+            dragover: function() {
+                if ($dropArea.data('accept-drop')) {
+                    $dropBox.addClass('hover');
+                }
+                return false;
+            },
+            dragend: function() {
+                if ($dropArea.data('accept-drop')) {
+                    $dropBox.removeClass('hover');
+                }
+                return false;
+            },
+            dragleave: function() {
+                if ($dropArea.data('accept-drop')) {
+                    $dropBox.removeClass('hover');
+                }
+                return false;
+            },
+            drop: function(e) {
+                if (!$dropArea.data('accept-drop')) {
+                    return;
+                }
+                $dropArea.data('accept-drop', false);
+                $dropBox.removeClass('hover');
+                e = e || window.event;
+                e.preventDefault();
+                e = e.originalEvent || e;
+
+                var files = (e.files || e.dataTransfer.files);
+                var file = files[0];
+                if (!file) {
+                    return;
+                }
+
+                var filename = file.name;
+                var lowercaseName = filename.toLowerCase();
+                var warningSuffixes = ['bin', 'hex', 'asm', 'txt'];
+                var suffix = lowercaseName.replace(/.*\.([^.]*)/, '$1');
+                var warn = false;
+                if (extensionWarnings.blacklist) {
+                    if (extensionWarnings.blacklist.indexOf(suffix) !== -1) {
+                        warn = true;
+                    }
+                }
+                if (extensionWarnings.whitelist) {
+                    if (extensionWarnings.whitelist.indexOf(suffix) === -1) {
+                        warn = true;
+                    }
+                }
+                if (warn) {
+                    $warning.slideDown();
+                    $warning.find('#extension-feedback').text(extensionWarnings.feedback || '');
+                    $warning.find('#extension-contents').text(suffix.toUpperCase());
+                    $warning.find('#extension-confirm').click(function() {
+                        $warning.slideUp();
+                        $modal.modal('hide');
+                        callback(file);
+                    });
+                    $warning.find('#extension-again').click(function() {
+                        $dropArea.data('accept-drop', true);
+                        $dropArea.slideDown();
+                        $warning.slideUp();
+                    });
+                } else {
+                    $modal.modal('hide');
+                    callback(file);
+                }
+                $dropArea.animate({ height: 'toggle', opacity: 'toggle'});
+            }
+        });
+        $modal.modal();
+    };
+
+    // Upload object
+    (function() {
+        $('#mem-upload-object').click(function() {
+            var extensionWarnings = {
+                feedback: 'Are you sure it\'s an object file? That is, did you assemble it or convert it from base-2 or hexadecimal ASCII?',
+                blacklist: ['bin', 'hex', 'asm', 'txt'],
+            };
+            invokeUploadModal('Load object file', function(file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var dataString = e.target.result;
+                    var data = new Array(dataString.length / 2);
+                    for (var i = 0; i < data.length; i ++) {
+                        var hi = dataString.charCodeAt(2 * i) << 8;
+                        var lo = dataString.charCodeAt(2 * i + 1);
+                        data[i] = lo | hi;
+                    }
+                    var orig = data[0];
+                    for (var i = 1; i < data.length; i++) {
+                        var address = orig + i - 1;
+                        var value = data[i];
+                        lc3.setMemory(address, value);
+                    }
+                };
+                reader.readAsBinaryString(file);
+            }, extensionWarnings);
+        });
+    })();
+
     // Activate!
     $('#container-wait').slideUp();
     $('#container-main').fadeIn();
