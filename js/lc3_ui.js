@@ -801,6 +801,11 @@ $(document).ready(function() {
             target = lc3.subroutineLevel - 1;
             enterBatchMode();
         });
+        $('#control-run').click(function() {
+            // Keep going forever.
+            target = -1;
+            enterBatchMode();
+        });
         $('#control-pause').click(function() {
             exitBatchMode();
         });
@@ -879,7 +884,7 @@ $(document).ready(function() {
         };
 
         var $modal = $('#load-object');
-        var $dropArea = $modal.find('.drop-holder');
+        var $dropArea = $modal.find('.modal-body');
         var $dropBox = $modal.find('.drop-box');
         var $invalid = $modal.find('#invalid-alert');
         var $invalidList = $invalid.find('ul');

@@ -64,9 +64,6 @@ footer {
 }
 
 /* File drop setup */
-.drop-holder {
-    text-align: center;
-}
 .drop-box {
     margin: 0 auto;
     display: table;
@@ -74,6 +71,7 @@ footer {
     height: 196px;
     border: 8px gray dashed;
     color: gray;
+    text-align: center;
 }
 .drop-box span {
     display: table-cell;

@@ -93,17 +93,7 @@
               </div>
             </div>
             <div class="col-xs-12 col-sm-6">
-              <div class="btn-group dropup">
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" id="mem-load">
-                  Load <span class="caret"></span>
-                  <span class="sr-only">Toggle Dropdown</span>
-                </button>
-                <ul class="dropdown-menu" role="menu">
-                  <li><a href="#" role="button" id="mem-upload-object">Upload object or symbol table</a></li>
-                  <li class="divider"></li>
-                  <li><a href="#" role="button" id="mem-reload-os">Reload OS</a></li>
-                </ul>
-              </div>
+              <button class="btn btn-default" type="button" id="mem-upload-object">Upload</button>
               <button class="btn btn-default" type="button" id="mem-dump">Dump Memory</button>
             </div>
           </div>
@@ -127,11 +117,12 @@
         <div class="btn-group" role="group">
           <button type="button" class="btn btn-default disabled-running" id="control-step" title="Execute the next instruction, entering a subroutine if necessary">Step</button>
           <button type="button" class="btn btn-default disabled-running" id="control-next" title="Fully execute the next instruction or subroutine">Next</button>
-          <button type="button" class="btn btn-default disabled-running" id="control-continue" title="Continue execution after being paused">Continue</button>
           <button type="button" class="btn btn-default disabled-running" id="control-finish" title="Finish execution of the current subroutine">Finish</button>
+          <button type="button" class="btn btn-default disabled-running" id="control-run" title="Run indefinitely">Run</button>
         </div>
         <div class="btn-group" role="group">
           <button type="button" class="btn btn-default disabled-paused" id="control-pause" title="Pause execution" disabled="disabled">Pause</button>
+          <button type="button" class="btn btn-default disabled-running" id="control-continue" title="Continue execution after being paused">Continue</button>
         </div>
         <div class="checkbox">
           <label><input type="checkbox" id="follow-pc" checked="checked">Follow PC</label>
@@ -226,10 +217,8 @@
         <p>
         You must convert any ASCII binary (.bin) or hexadecimal (.hex) files, and assemble any assembly language (.asm) programs, before uploading.
         </p>
-        <div class="drop-holder">
-          <div class="drop-box">
-            <span>Drop files here</span>
-          </div>
+        <div class="drop-box">
+          <span>Drop files here</span>
         </div>
         <div class="alert alert-warning" id="invalid-alert">
           <strong>Hold on!</strong>
