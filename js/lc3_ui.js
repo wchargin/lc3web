@@ -868,8 +868,23 @@ $(document).ready(function() {
             reader.readAsBinaryString(file);
         };
         var importSym = function(file) {
-            // TODO
-            console.log('Symbol table import not yet supported.');
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var dataString = e.target.result;
+                var lines = dataString.split(/[\r\n]/);
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
+                    var regex = /.*?([A-Za-z0-9]+)\s*([0-9A-Fa-f]+)/;
+                    var match = line.match(regex);
+                    if (!match) {
+                        continue;
+                    }
+                    var address = parseInt(match[2], 16);
+                    var label = match[1];
+                    lc3.setLabel(address, label);
+                }
+            };
+            reader.readAsText(file);
         };
         var extensionData = {
             whitelist: {
