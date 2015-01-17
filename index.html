@@ -94,7 +94,7 @@
             </div>
             <div class="col-xs-12 col-sm-6">
               <button class="btn btn-default" type="button" id="mem-upload-object">Upload</button>
-              <button class="btn btn-default" type="button" id="mem-dump">Dump Memory</button>
+              <button class="btn btn-default" type="button" id="mem-assemble">Assemble</button>
             </div>
           </div>
       </div></div>
@@ -246,6 +246,40 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for assembling -->
+<div class="modal fade" id="assemble-modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Assemble</h4>
+      </div>
+      <div class="modal-body">
+        <p>Paste your assembly code below.</p>
+        <textarea class="form-control" rows="16" id="assembly-input"></textarea>
+        <div class="alert alert-danger">
+          <strong>Oh no!</strong>
+          You've got <span id="assembly-error-noun"></span> in your assembly code:
+          <ul id="assembly-errors">
+          </ul>
+        </div>
+        <div class="alert alert-success">
+          <strong>Awesome!</strong>
+          Your code was assembled successfully.
+          You can continue to make changes and assemble again, or load it into the simulator when ready.
+          <div class="btn-toolbar alert-buttons" role="toolbar">
+            <button class="btn btn-primary" id="btn-assembly-load">Load into Simulator</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-assemble">Assemble</button>
       </div>
     </div>
   </div>

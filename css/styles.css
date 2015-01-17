@@ -83,9 +83,14 @@ footer {
     border-color: #337ab7;
 }
 .alert-buttons {
+    margin-top: 1em;
     text-align: right;
 }
 
-#load-object .alert {
+.modal .alert {
     margin-top: 1em;
+}
+
+#assembly-input {
+    font-family: monospace;
 }

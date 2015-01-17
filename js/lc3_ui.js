@@ -1046,6 +1046,68 @@ $(document).ready(function() {
         });
     })();
 
+    // Configure the assembly modal
+    (function() {
+        var $modal = $('#assemble-modal');
+
+        var $textarea = $('#assembly-input');
+        var $btnAssemble = $('#btn-assemble');
+        var $btnLoad = $('#btn-assembly-load');
+
+        var $errorNoun = $('#assembly-error-noun');
+        var $errorList = $('#assembly-errors');
+
+        var $successAlert = $modal.find('.alert-success');
+        var $errorAlert = $modal.find('.alert-danger');
+
+        var assemblyResult = null;
+        $btnAssemble.click(function() {
+            var code = $textarea.val();
+            assemblyResult = assemble(code);
+            $errorList.empty();
+            if (assemblyResult.error) {
+                var errorList = assemblyResult.error;
+                for (var i = 0; i < errorList.length; i++) {
+                    $('<li>').text(errorList[i]).appendTo($errorList);
+                }
+                $errorNoun.text(errorList.length === 1 ? 'an error' : 'some errors');
+                $errorAlert.slideDown();
+                $successAlert.slideUp();
+            } else {
+                $successAlert.slideDown();
+                $errorAlert.slideUp();
+            }
+        });
+        $btnLoad.click(function() {
+            if (assemblyResult === null) {
+                // The button should have been hidden...
+                // ...but bail anyway.
+                return;
+            }
+            var orig = assemblyResult.orig;
+            var mc = assemblyResult.machineCode;
+            var symbols = assemblyResult.symbolTable;
+            // Add all the instructions
+            for (var i = 0; i < mc.length; i++) {
+                lc3.setMemory(orig + i, mc[i]);
+            }
+            // Add all the symbols
+            for (var labelName in symbols) {
+                lc3.setLabel(symbols[labelName], labelName);
+            }
+            $modal.modal('hide');
+        });
+
+        $('#mem-assemble').click(function() {
+            $modal.modal();
+        });
+        $modal.bind('show.bs.modal', function() {
+            $errorAlert.slideUp();
+            $successAlert.slideUp();
+            assemblyResult = null;
+        });
+    })();
+
     // Activate!
     $('#container-wait').slideUp();
     $('#container-main').fadeIn();
