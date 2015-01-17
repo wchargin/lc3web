@@ -255,6 +255,70 @@ var assemble = (function() {
             'HALT':  0xF025
         };
 
+        // Determines the specified register, or returns an error.
+        // Example: "R3" -> 3, "R" -> '<error text>'
+        var parseRegister = function(op) {
+            var cop = op.toUpperCase();
+            if (cop.charAt(0) !== 'R') {
+                return 'Expected register name; found "' + op + '"!';
+            } else if (cop.length === 1) {
+                return 'No register name provided!';
+            } else if (cop.length > 2) {
+                return 'Register names should be a single digit!';
+            } else {
+                var register = parseInt(op.substring(1));
+                if (isNaN(register) || register < 0 || register > 7) {
+                    return 'No such register "' + op + '"!';
+                } else {
+                    // Everything checks out.
+                    return register;
+                }
+            }
+        };
+
+        // Determines the specified literal, or returns an error.
+        // No range checking or coercing (e.g., toUint16) is performed.
+        // Examples: "#7" -> 7, "-xBAD" -> -0xBAD, "label" -> '<error text>'
+        var parseLiteral = function(literal) {
+            var src = literal;
+            var negate = false;
+            var first = src.charAt(0);
+            if (first === '-') {
+                negate = true;
+                src = src.substring(1);
+                first = src.charAt(0);
+            }
+            if (first === '#' || first.toLowerCase() === 'x') {
+                // Standard decimal or hexadecimal literal.
+                var num;
+                var invalid;
+                if (first === '#') {
+                    num = LC3Util.parseNumber(src.substring(1));
+                    invalid = 'Invalid decimal literal!';
+                } else {
+                    num = LC3Util.parseNumber(src);
+                    invalid = 'Invalid hexadecimal literal!';
+                }
+                if (isNaN(num)) {
+                    return invalid;
+                }
+                if (negate && num < 0) {
+                    // No double negatives.
+                    // (I tried a pun, but they were just too bad.)
+                    return invalid;
+                }
+                return negate ? -num : num;
+            } else {
+                return 'Invalid literal!';
+            }
+        };
+
+        // Validates the minimum and maximum range, inclusive.
+        // Returns a boolean.
+        var inRange = function(x, min, max) {
+            return min <= x && x <= max;
+        };
+
         // Parses the given command and operand.
         // If valid, sets memory accordingly and advances the page address.
         // Otherwise, adds an error to the list of errors.
@@ -378,66 +442,6 @@ var assemble = (function() {
                 var instruction = opcode << 12;
                 var operands = operand.split(',');
                 var opcount = operands.length;
-                // Determines the specified register, or returns an error.
-                // Example: "R3" -> 3, "R" -> '<error>'
-                var parseRegister = function(op) {
-                    var cop = op.toUpperCase();
-                    if (cop.charAt(0) !== 'R') {
-                        return 'Expected register name; found "' + op + '"!';
-                    } else if (cop.length === 1) {
-                        return 'No register name provided!';
-                    } else if (cop.length > 2) {
-                        return 'Register names should be a single digit!';
-                    } else {
-                        var register = parseInt(op.substring(1));
-                        if (isNaN(register) || register < 0 || register > 7) {
-                            return 'No such register "' + op + '"!';
-                        } else {
-                            // Everything checks out.
-                            return register;
-                        }
-                    }
-                };
-                // Determines the specified literal, or returns an error.
-                // No range checking or coercing (e.g., toUint16) is performed.
-                // Examples: "#7" -> 7, "-xBAD" -> -0xBAD, "label" -> '<error>'
-                var parseLiteral = function(literal) {
-                    var src = literal;
-                    var negate = false;
-                    var first = src.charAt(0);
-                    if (first === '-') {
-                        negate = true;
-                        src = src.substring(1);
-                        first = src.charAt(0);
-                    }
-                    if (first === '#' || first.toLowerCase() === 'x') {
-                        // Standard decimal or hexadecimal literal.
-                        var num;
-                        var invalid;
-                        if (first === '#') {
-                            num = LC3Util.parseNumber(src.substring(1));
-                            invalid = 'Invalid decimal literal!';
-                        } else {
-                            num = LC3Util.parseNumber(src);
-                            invalid = 'Invalid hexadecimal literal!';
-                        }
-                        if (isNaN(num)) {
-                            return invalid;
-                        }
-                        if (negate && num < 0) {
-                            // No double negatives.
-                            // (I tried a pun, but they were just too bad.)
-                            return invalid;
-                        }
-                        return negate ? -num : num;
-                    } else {
-                        return 'Invalid literal!';
-                    }
-                };
-                // Validates the minimum and maximum range, inclusive.
-                var inRange = function(x, min, max) {
-                    return min <= x && x <= max;
-                };
                 // Process each opcode.
                 if (command === 'ADD' || command === 'AND') {
                     if (opcount !== 3) {
