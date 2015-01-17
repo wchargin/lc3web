@@ -47,7 +47,7 @@ var assemble = (function() {
     var findOrig = function(tokenizedLines) {
         // Convenience function to generate an error object.
         var error = function(message) {
-            return { error: message };
+            return { error: [message] };
         }
 
         // Find the .ORIG directive.
@@ -239,6 +239,11 @@ var assemble = (function() {
         var error = function(lineIndex, message) {
             errors.push('line ' + (lineIndex + 1) + ': ' + message);
         }
+        // Error generator for an invalid number of operands.
+        var errorOpcount = function(lineIndex, expected, actual) {
+            var e = expected + ' ' + (expected === 1 ? 'operand' : 'operands');
+            error(lineIndex, 'Expected ' + e + ', but found ' + actual + '!');
+        };
 
         // These are all the instructions that take no operands.
         // Note that the only nullary assembly directive is .END.
@@ -253,6 +258,17 @@ var assemble = (function() {
             'IN':    0xF023,
             'PUTSP': 0xF024,
             'HALT':  0xF025
+        };
+
+        // Validates a minimum and maximum range, inclusive.
+        // Returns a boolean.
+        var inRange = function(x, min, max) {
+            return min <= x && x <= max;
+        };
+        var inBitRangeSigned = function(x, bits) {
+            var min = -(1 << (bits - 1));
+            var max = (1 << (bits - 1)) - 1;
+            return inRange(x, min, max);
         };
 
         // Determines the specified register, or returns an error.
@@ -313,10 +329,29 @@ var assemble = (function() {
             }
         };
 
-        // Validates the minimum and maximum range, inclusive.
-        // Returns a boolean.
-        var inRange = function(x, min, max) {
-            return min <= x && x <= max;
+        // Parses a PC-relative offset, in either literal or label form.
+        // The resulting offset must fit in the given number of bits.
+        // Returns the offset from the current PC (as unsigned),
+        // or an error message if failed.
+        var parseRelativeAddress = function(pc, operand, bits) {
+            var offset;
+            var literal = parseLiteral(operand);
+            if (!isNaN(literal)) {
+                // Literal offset.
+                offset = literal;
+            } else {
+                // Label offset.
+                offset = symbols[operand] - pc;
+                if (isNaN(offset)) {
+                    return 'No such label "' + operand + '"!';
+                }
+            }
+            // Check that offset fits in the bits.
+            if (inBitRangeSigned(offset, bits)) {
+                return LC3Util.toUint16(offset) & ((1 << bits) - 1);
+            } else {
+                return 'Offset is out of range!';
+            }
         };
 
         // Parses the given command and operand.
@@ -337,12 +372,14 @@ var assemble = (function() {
                     if (!isNaN(num)) {
                         // It's a literal.
                         mc[index] = LC3Util.toUint16(num);
+                        pageAddress++;
                         return;
                     } else {
                         // It's a label (or it should be).
                         var address = symbols[operand];
                         if (address !== undefined) {
                             mc[index] = address;
+                            pageAddress++;
                         } else {
                             error(l, 'No such label "' + operand + '"!');
                             return;
@@ -351,16 +388,17 @@ var assemble = (function() {
                 } else if (command === '.BLKW') {
                     // The operand should be a non-negative integer.
                     var length = LC3Util.parseNumber(operand);
-                    if (isNaN(num)) {
+                    if (isNaN(length)) {
                         error(l, 'Operand to .BLKW is not a number!');
                         return;
-                    } else if (num < 0) {
+                    } else if (length < 0) {
                         error(l, 'Operand to .BLKW must be positive!');
                         return;
                     } else {
                         for (var i = 0; i < length; i++) {
-                            mc[index] = 0;
+                            mc[index] = 0x00;
                             pageAddress++;
+                            index++;
                         }
                         return;
                     }
@@ -393,7 +431,7 @@ var assemble = (function() {
                                 escaped = '\\';
                             }
                             if (escaped !== null) {
-                                mc[index] = escaped.charCodeAt(0);
+                                mc[index] = escaped.charCodeAt(0) & 0xFF;
                                 index++;
                                 pageAddress++;
                                 continue;
@@ -401,6 +439,15 @@ var assemble = (function() {
                                 error(l, 'Invalid escape "\\' + cn + '"!');
                                 return;
                             }
+                        } else if (c === '"') {
+                            // That's an unescaped quote, and we're not done.
+                            error(l, 'Unescaped quote before end of string!');
+                            return;
+                        } else {
+                            mc[index] = c.charCodeAt(0) & 0xFF;
+                            index++;
+                            pageAddress++;
+                            continue;
                         }
                     }
                     // Make sure we didn't backslash-escape the closing quote.
@@ -408,6 +455,10 @@ var assemble = (function() {
                         error(l, 'Unterminated string literal!');
                         return;
                     }
+                    // Add the null terminator.
+                    mc[index] = 0x00;
+                    index++;
+                    pageAddress++;
                 } else {
                     // The command starts with a dot,
                     // but is not .FILL, .BLKW, or .STRINGZ.
@@ -417,27 +468,36 @@ var assemble = (function() {
             } else {
                 // It's an instruction, not a directive.
                 var opcode = {
-                    'ADD':  1,
-                    'AND':  5,
-                    'BR':   0,
-                    'JMP':  12,
-                    'JSR':  4,
-                    'LD':   2,
-                    'LDR':  6,
-                    'LDI':  10,
-                    'LEA':  14,
-                    'NOT':  9,
-                    'RET':  12,
-                    'RTI':  8,
-                    'ST':   3,
-                    'STR':  7,
-                    'STI':  11,
-                    'TRAP': 15,
+                    'ADD':   1,
+                    'AND':   5,
+                    'BR':    0,
+                    'BRN':   0,
+                    'BRZ':   0,
+                    'BRNZ':  0,
+                    'BRP':   0,
+                    'BRNP':  0,
+                    'BRZP':  0,
+                    'BRNZP': 0,
+                    'JMP':   12,
+                    'JSR':   4,
+                    'LD':    2,
+                    'LDR':   6,
+                    'LDI':   10,
+                    'LEA':   14,
+                    'NOT':   9,
+                    'RET':   12,
+                    'RTI':   8,
+                    'ST':    3,
+                    'STR':   7,
+                    'STI':   11,
+                    'TRAP':  15,
                 }[command];
                 if (opcode === undefined) {
                     error(l, 'Unrecognized instruction "' + command + '"!');
                     return;
                 }
+                // When executed, the PC will be one past the current address.
+                var pc = pageAddress + 1;
                 // Create the instruction as an integer. Start with opcode.
                 var instruction = opcode << 12;
                 var operands = operand.split(',');
@@ -445,7 +505,7 @@ var assemble = (function() {
                 // Process each opcode.
                 if (command === 'ADD' || command === 'AND') {
                     if (opcount !== 3) {
-                        error(l, 'Expected 3 operands; found ' + opcount + '!');
+                        errorOpcount(l, 3, opcount);
                         return;
                     }
                     var dr = parseRegister(operands[0]);
@@ -471,15 +531,168 @@ var assemble = (function() {
                             error(l, 'Operand neither register nor literal!');
                             return;
                         }
-                        if (!inRange(immediate, -32, 31)) {
+                        if (!inRange(immediate, -16, 15)) {
                             error(l, 'Constant is out of range!');
                             return;
                         }
                         instruction |= (1 << 5);
                         instruction |= LC3Util.toInt16(immediate) & 0x1F;
                     }
-                } // TODO the rest of the instructions
+                } else if (opcode === 0) {
+                    // One of the eight BR functions.
+                    if (opcount !== 1) {
+                        errorOpcount(l, 1, opcount);
+                    }
+                    var n = command.indexOf('N') !== -1;
+                    var z = command.indexOf('Z') !== -1;
+                    var p = command.indexOf('P') !== -1;
+                    // In assembly, BR = BRnzp.
+                    if (!(n || z || p)) {
+                        n = z = p = true;
+                    }
+                    // Set the appropriate bits.
+                    var nzp = (n ? 4 : 0) | (z ? 2 : 0) | (p ? 1 : 0);
+                    instruction |= (nzp << 9);
+                    var offset = parseRelativeAddress(pc, operands[0], 9);
+                    if (isNaN(offset)) {
+                        error(l, offset);
+                        return;
+                    }
+                    instruction |= offset;
+                } else if (command === 'JMP') {
+                    if (opcount !== 1) {
+                        errorOpcount(l, 1, opcount);
+                    }
+                    var base = parseRegister(operands[0]);
+                    if (isNaN(base)) {
+                        error(l, base);
+                        return;
+                    }
+                    instruction |= (base << 6);
+                } else if (command === 'RET') {
+                    console.log('warning: RET not handled as nullary!');
+                    if (opcount !== 0) {
+                        errorOpcount(l, 0, opcount);
+                        return;
+                    }
+                    instruction = 0xC1C0;
+                } else if (command === 'JSR') {
+                    if (opcount !== 1) {
+                        errorOpcount(l, 1, opcount);
+                        return;
+                    }
+                    var offset = parseRelativeAddress(pc, operands[0], 11);
+                    if (isNaN(offset)) {
+                        error(l, offset);
+                        return;
+                    }
+                    instruction |= offset;
+                } else if (command === 'JSRR') {
+                    if (opcount !== 1) {
+                        errorOpcount(l, 1, opcount);
+                        return;
+                    }
+                    var base = parseRegister(operands[0]);
+                    if (isNaN(base)) {
+                        error(l, base);
+                        return;
+                    }
+                    instruction |= (base << 6);
+                } else if (command === 'LD'
+                        || command === 'LDI'
+                        || command === 'LEA'
+                        || command === 'ST'
+                        || command === 'STI') {
+                    if (opcount !== 2) {
+                        errorOpcount(l, 2, opcount);
+                        return;
+                    }
+                    // This is DR for loads, and SR for stores.
+                    var register = parseRegister(operands[0]);
+                    if (isNaN(register)) {
+                        error(l, register);
+                        return;
+                    }
+                    instruction |= (register << 9);
+                    var offset = parseRelativeAddress(pc, operands[1], 9);
+                    if (isNaN(offset)) {
+                        error(l, offset);
+                        return;
+                    }
+                    instruction |= offset;
+                } else if (command === 'LDR' || command === 'STR') {
+                    if (opcount !== 3) {
+                        errorOpcount(l, 3, opcount);
+                        return;
+                    }
+                    // This is DR for loads, and SR for stores.
+                    var register = parseRegister(operands[0]);
+                    if (isNaN(register)) {
+                        error(l, register);
+                        return;
+                    }
+                    instruction |= (register << 9);
+                    var base = parseRegister(operands[1]);
+                    if (isNaN(base)) {
+                        error(l, base);
+                        return;
+                    }
+                    instruction |= (base << 6);
+                    // Note: this is *not* a PC offset!
+                    var offset = parseLiteral(operands[2]);
+                    if (isNaN(offset)) {
+                        error(l, offset);
+                        return;
+                    }
+                    if (!inRange(offset, -32, 31)) {
+                        error(l, 'Offset is out of range!');
+                        return;
+                    }
+                    instruction |= offset;
+                } else if (command === 'NOT') {
+                    if (opcount !== 2) {
+                        errorOpcount(l, 2, opcount);
+                    }
+                    var dr = parseRegister(operands[0]);
+                    var sr = parseRegister(operands[0]);
+                    if (isNaN(dr)) {
+                        error(l, dr);
+                        return;
+                    }
+                    if (isNaN(sr)) {
+                        error(l, sr);
+                        return;
+                    }
+                    instruction |= (dr << 9);
+                    instruction |= (sr << 9);
+                    instruction |= (1 << 6) - 1; // should be one-filled
+                } else if (command === 'RTI') {
+                    console.log('warning: RTI not handled as nullary!');
+                    if (opcount !== 0) {
+                        errorOpcount(l, 0, opcount);
+                        return;
+                    }
+                    instruction = 0x8000;
+                } else if (command === 'TRAP') {
+                    if (opcount !== 1) {
+                        errorOpcount(l, 1, opcount);
+                        return;
+                    }
+                    var vector = parseLiteral(operands[0]);
+                    if (isNaN(vector)) {
+                        error(l, vector);
+                        return;
+                    }
+                    if (!inRange(vector, 0x00, 0xFF)) {
+                        error(l, 'Trap vector out of range!');
+                        return;
+                    }
+                    instruction |= vector;
+                } else {
+                    console.log('warning: unhandled instruction: ' + command);
+                }
                 // If we get here, there was no error.
+                // Store the instruction and increment our page.
                 mc[index] = instruction;
                 pageAddress++;
             }
@@ -547,7 +760,7 @@ var assemble = (function() {
         }
     };
 
-    // Actual assembly function (combine the above steps)
+    // Actual assembly function (combines the above steps).
     return function(fileContents) {
         // Tokenize the document.
         var tokens = tokenize(fileContents);
