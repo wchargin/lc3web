@@ -1,3 +1,11 @@
+There are two licenses that apply to this program.
+Most of the program is released under the GNU GPL v2 (below).
+However, the LC-3 OS was created by Brian J. Hartman,
+and is distributed under a different license.
+That license appears at the bottom of this file.
+
+------------------------------------------------------------
+
 GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
 
@@ -338,3 +346,18 @@ consider it more useful to permit linking proprietary applications with the
 library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.
 
+------------------------------------------------------------
+
+LICENSE FOR LC-3 OPERATING SYSTEM
+
+The LC-3 operating system includes the following notice:
+
+    This software is provided "AS IS".  No warranty is expressed or implied.
+    Permission to copy without fee all or part of this material is granted
+    provided that the copies are not made or distributed for direct commercial
+    advantage, this copyright notice is included, and notice that copying is
+    by permission of the author of this software.  To copy otherwise, or to
+    republish, requires a fee and/or specific written permission from the author.
+
+    Copyright (c) 1998 - 2003 Brian J. Hartman
+    brianhartman@hotmail.com
