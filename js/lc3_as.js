@@ -299,32 +299,27 @@ var assemble = (function() {
         // No range checking or coercing (e.g., toUint16) is performed.
         // Examples: "#7" -> 7, "-xBAD" -> -0xBAD, "label" -> '<error text>'
         var parseLiteral = function(literal) {
-            var src = literal;
-            var negate = false;
-            var first = src.charAt(0);
-            if (first === '-') {
-                negate = true;
-                src = src.substring(1);
-                first = src.charAt(0);
-            }
+            var first = literal.charAt(0);
             if (first === '#' || first.toLowerCase() === 'x') {
                 // Standard decimal or hexadecimal literal.
-                var num;
-                var invalid;
+                var invalidMessage;
+                var toParse;
+                var negate = (literal.charAt(1) === '-');
                 if (first === '#') {
-                    num = LC3Util.parseNumber(src.substring(1));
-                    invalid = 'Invalid decimal literal!';
+                    toParse = literal.substring(negate ? 2 : 1);
+                    invalidMessage = 'Invalid decimal literal!';
                 } else {
-                    num = LC3Util.parseNumber(src);
-                    invalid = 'Invalid hexadecimal literal!';
+                    toParse = negate ? first + literal.substring(2) : literal;
+                    invalidMessage = 'Invalid hexadecimal literal!';
                 }
+                var num = LC3Util.parseNumber(toParse);
                 if (isNaN(num)) {
-                    return invalid;
+                    return invalidMessage;
                 }
                 if (negate && num < 0) {
                     // No double negatives.
                     // (I tried a pun, but they were just too bad.)
-                    return invalid;
+                    return invalidMessage;
                 }
                 return negate ? -num : num;
             } else {
@@ -371,7 +366,7 @@ var assemble = (function() {
                 // Assembly directive.
                 if (command === '.FILL') {
                     // The operand could be either a literal or a label.
-                    var num = LC3Util.parseNumber(operand);
+                    var num = parseLiteral(operand);
                     if (!isNaN(num)) {
                         // It's a literal.
                         mc[index] = LC3Util.toUint16(num);
