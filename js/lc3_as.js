@@ -101,7 +101,7 @@ var assemble = (function() {
 
     // Returns either
     //   { error: <list of error messages> } or
-    //   { symbols: <symbol table> }
+    //   { symbols: <symbol table>, length: <number of words> }
     var generateSymbolTable = function(tokenizedLines, orig, begin) {
         var symbols = { }; // maps labels to page addresses
         var errors = [];
@@ -194,7 +194,7 @@ var assemble = (function() {
                 // This could be an operation and its operands,
                 // or a label and a nullary operation.
                 var fst = line[0], snd = line[1];
-                if (nullaries.indexOf(snd) !== -1) {
+                if (nullaries.indexOf(snd.toUpperCase()) !== -1) {
                     // Label and nullary instruction.
                     symbols[fst] = pageAddress;
                     pageAddress++;
@@ -211,15 +211,336 @@ var assemble = (function() {
                 // Uh, that shouldn't be.
                 error(i, 'Too many tokens! I give up.');
             }
+            // Make sure this wasn't, e.g., a .BLKW on the edge of memory.
+            if (pageAddress > 0x10000) {
+                error('Outside maximum memory address! Aborting.');
+                break;
+            }
         }
-        return errors.length ? { error: errors } : { symbols: symbols };
+
+        // Package result and return.
+        if (errors.length > 0) {
+            return { error: errors };
+        } else {
+            return { symbols: symbols, length: pageAddress - orig };
+        }
     };
 
     // Returns either:
     //   { error: <list of errors> } or
     //   { code: <list of machine code words, as numbers> }
-    var generateMachineCode = function(tokens, orig, begin, symbols) {
-        return { error: 'Machine code generation not implemented!' };
+    var generateMachineCode = function(lines, orig, begin, length, symbols) {
+        var mc = new Array(length);
+        var errors = [];
+
+        var pageAddress = orig;
+
+        // Convenience function to generate an error object.
+        var error = function(lineIndex, message) {
+            errors.push('line ' + (lineIndex + 1) + ': ' + message);
+        }
+
+        // These are all the instructions that take no operands.
+        // Note that the only nullary assembly directive is .END.
+        // This is not included in this list; it's handled separately.
+        // Each nullary instruction should map to exactly one word.
+        var nullaries = {
+            'RET':   0xC1C0,
+            'RTI':   0x8000,
+            'GETC':  0xF020,
+            'OUT':   0xF021,
+            'PUTS':  0xF022,
+            'IN':    0xF023,
+            'PUTSP': 0xF024,
+            'HALT':  0xF025
+        };
+
+        // Parses the given command and operand.
+        // If valid, sets memory accordingly and advances the page address.
+        // Otherwise, adds an error to the list of errors.
+        // This method returns nothing.
+        var applyInstruction = function(l, command, operand) {
+            // Standardize case for ease of comparison.
+            command = command.toUpperCase();
+            // Find where we'll insert the command.
+            var index = pageAddress - orig;
+            // Logic time!
+            if (command.charAt(0) === '.') {
+                // Assembly directive.
+                if (command === '.FILL') {
+                    // The operand could be either a literal or a label.
+                    var num = LC3Util.parseNumber(operand);
+                    if (!isNaN(num)) {
+                        // It's a literal.
+                        mc[index] = LC3Util.toUint16(num);
+                        return;
+                    } else {
+                        // It's a label (or it should be).
+                        var address = symbols[operand];
+                        if (address !== undefined) {
+                            mc[index] = address;
+                        } else {
+                            error(l, 'No such label "' + operand + '"!');
+                            return;
+                        }
+                    }
+                } else if (command === '.BLKW') {
+                    // The operand should be a non-negative integer.
+                    var length = LC3Util.parseNumber(operand);
+                    if (isNaN(num)) {
+                        error(l, 'Operand to .BLKW is not a number!');
+                        return;
+                    } else if (num < 0) {
+                        error(l, 'Operand to .BLKW must be positive!');
+                        return;
+                    } else {
+                        for (var i = 0; i < length; i++) {
+                            mc[index] = 0;
+                            pageAddress++;
+                        }
+                        return;
+                    }
+                } else if (command === '.STRINGZ') {
+                    // Warning: arduous string parsing and validation ahead.
+                    // First, make sure it's even a string.
+                    if (operand.charAt(0) !== '"') {
+                        error(l, 'Operand to .STRINGZ must be a string!');
+                        return;
+                    }
+                    // Validate each character and add it.
+                    // (Don't include the quote delimiters, obviously.)
+                    var i;
+                    for (i = 1; i < operand.length - 1; i++) {
+                        var c = operand.charAt(i);
+                        if (c === '\\') {
+                            // Supported escape sequences: \0, \n, \r, \", \\.
+                            i++;
+                            var cn = operand.charAt(i);
+                            var escaped = null;
+                            if (cn === '0') {
+                                escaped = '\0';
+                            } else if (cn === 'n') {
+                                escaped = '\n';
+                            } else if (cn === 'r') {
+                                escaped = '\r';
+                            } else if (cn === '"') {
+                                escaped = '\"';
+                            } else if (cn === '\\') {
+                                escaped = '\\';
+                            }
+                            if (escaped !== null) {
+                                mc[index] = escaped.charCodeAt(0);
+                                index++;
+                                pageAddress++;
+                                continue;
+                            } else {
+                                error(l, 'Invalid escape "\\' + cn + '"!');
+                                return;
+                            }
+                        }
+                    }
+                    // Make sure we didn't backslash-escape the closing quote.
+                    if (i >= operand.length || operand[i] !== '"') {
+                        error(l, 'Unterminated string literal!');
+                        return;
+                    }
+                } else {
+                    // The command starts with a dot,
+                    // but is not .FILL, .BLKW, or .STRINGZ.
+                    error(l, 'Invalid directive "' + command + '"!');
+                    return;
+                }
+            } else {
+                // It's an instruction, not a directive.
+                var opcode = {
+                    'ADD':  1,
+                    'AND':  5,
+                    'BR':   0,
+                    'JMP':  12,
+                    'JSR':  4,
+                    'LD':   2,
+                    'LDR':  6,
+                    'LDI':  10,
+                    'LEA':  14,
+                    'NOT':  9,
+                    'RET':  12,
+                    'RTI':  8,
+                    'ST':   3,
+                    'STR':  7,
+                    'STI':  11,
+                    'TRAP': 15,
+                }[command];
+                if (opcode === undefined) {
+                    error(l, 'Unrecognized instruction "' + command + '"!');
+                    return;
+                }
+                // Create the instruction as an integer. Start with opcode.
+                var instruction = opcode << 12;
+                var operands = operand.split(',');
+                var opcount = operands.length;
+                // Determines the specified register, or returns an error.
+                // Example: "R3" -> 3, "R" -> '<error>'
+                var parseRegister = function(op) {
+                    var cop = op.toUpperCase();
+                    if (cop.charAt(0) !== 'R') {
+                        return 'Expected register name; found "' + op + '"!';
+                    } else if (cop.length === 1) {
+                        return 'No register name provided!';
+                    } else if (cop.length > 2) {
+                        return 'Register names should be a single digit!';
+                    } else {
+                        var register = parseInt(op.substring(1));
+                        if (isNaN(register) || register < 0 || register > 7) {
+                            return 'No such register "' + op + '"!';
+                        } else {
+                            // Everything checks out.
+                            return register;
+                        }
+                    }
+                };
+                // Determines the specified literal, or returns an error.
+                // No range checking or coercing (e.g., toUint16) is performed.
+                // Examples: "#7" -> 7, "-xBAD" -> -0xBAD, "label" -> '<error>'
+                var parseLiteral = function(literal) {
+                    var src = literal;
+                    var negate = false;
+                    var first = src.charAt(0);
+                    if (first === '-') {
+                        negate = true;
+                        src = src.substring(1);
+                        first = src.charAt(0);
+                    }
+                    if (first === '#' || first.toLowerCase() === 'x') {
+                        // Standard decimal or hexadecimal literal.
+                        var num;
+                        var invalid;
+                        if (first === '#') {
+                            num = LC3Util.parseNumber(src.substring(1));
+                            invalid = 'Invalid decimal literal!';
+                        } else {
+                            num = LC3Util.parseNumber(src);
+                            invalid = 'Invalid hexadecimal literal!';
+                        }
+                        if (isNaN(num)) {
+                            return invalid;
+                        }
+                        if (negate && num < 0) {
+                            // No double negatives.
+                            // (I tried a pun, but they were just too bad.)
+                            return invalid;
+                        }
+                        return negate ? -num : num;
+                    } else {
+                        return 'Invalid literal!';
+                    }
+                };
+                // Validates the minimum and maximum range, inclusive.
+                var inRange = function(x, min, max) {
+                    return min <= x && x <= max;
+                };
+                // Process each opcode.
+                if (command === 'ADD' || command === 'AND') {
+                    if (opcount !== 3) {
+                        error(l, 'Expected 3 operands; found ' + opcount + '!');
+                        return;
+                    }
+                    var dr = parseRegister(operands[0]);
+                    var sr1 = parseRegister(operands[1]);
+                    if (isNaN(dr)) {
+                        error(l, dr);
+                        return;
+                    }
+                    if (isNaN(sr1)) {
+                        error(l, sr1);
+                        return;
+                    }
+                    instruction |= (dr << 9);
+                    instruction |= (sr1 << 6);
+                    var sr2 = parseRegister(operands[2]);
+                    if (!isNaN(sr2)) {
+                        // Register mode.
+                        instruction |= sr2;
+                    } else {
+                        // Immediate mode.
+                        var immediate = parseLiteral(operands[2]);
+                        if (isNaN(immediate)) {
+                            error(l, 'Operand neither register nor literal!');
+                            return;
+                        }
+                        if (!inRange(immediate, -32, 31)) {
+                            error(l, 'Constant is out of range!');
+                            return;
+                        }
+                        instruction |= (1 << 5);
+                        instruction |= LC3Util.toInt16(immediate) & 0x1F;
+                    }
+                } // TODO the rest of the instructions
+                // If we get here, there was no error.
+                mc[index] = instruction;
+                pageAddress++;
+            }
+        };
+
+        for (var i = begin; i < lines.length; i++) {
+            var line = lines[i];
+            var length = line.length;
+            if (length === 0) {
+                continue;
+            }
+            // First, check if we're done.
+            var hasEnd = false;
+            for (var j = 0; j < length; j++) {
+                if (line[j].toUpperCase() === '.END') {
+                    hasEnd = true;
+                    break;
+                }
+            }
+            if (hasEnd) {
+                break;
+            }
+            // Otherwise, let's take a look at the data.
+            if (length === 1) {
+                var data = line[0];
+                // This could be a line with a nullary instruction,
+                // like RET, HALT, etc.
+                if (data.toUpperCase() in nullaries) {
+                    // No problem here.
+                    // Determine the contents and add to the machine code.
+                    mc[pageAddress - orig] = nullaries[data.toUpperCase()];
+                    pageAddress++;
+                    continue;
+                }
+                // No instruction. This is a label-only line.
+                // This was already handled in the symbol table generation.
+                continue;
+            } else if (length === 2) {
+                // This could be an operation and its operands,
+                // or a label and a nullary operation.
+                var fst = line[0], snd = line[1];
+                if (snd.toUpperCase() in nullaries) {
+                    // Label and nullary instruction.
+                    mc[pageAddress - orig] = nullaries[snd.toUpperCase()];
+                    pageAddress++;
+                } else {
+                    // Instruction and operands.
+                    applyInstruction(i, fst, snd);
+                }
+            } else if (length === 3) {
+                // This is a label, an instruction, and its operands.
+                // The label's already been handled.
+                applyInstruction(i, line[1], line[2]);
+            } else {
+                // Uh, that shouldn't be.
+                error(i, 'Too many tokens! I give up.');
+            }
+        }
+
+        // Package result and return.
+        if (errors.length > 0) {
+            return { error: errors };
+        } else {
+            return { code: mc };
+        }
     };
 
     // Actual assembly function (combine the above steps)
@@ -241,9 +562,10 @@ var assemble = (function() {
             return symbolTable;
         }
         var symbols = symbolTable.symbols;
+        var length = symbolTable.length;
 
         // Generate the machine code.
-        var mc = generateMachineCode(tokens, orig, begin, symbols);
+        var mc = generateMachineCode(tokens, orig, begin, length, symbols);
         if (mc.error) {
             return mc;
         }
