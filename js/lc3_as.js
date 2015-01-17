@@ -143,6 +143,7 @@ var assemble = (function() {
             }
         };
 
+        var hasEnd = false;
         for (var i = begin; i < tokenizedLines.length; i++) {
             var line = tokenizedLines[i];
             var length = line.length;
@@ -150,7 +151,6 @@ var assemble = (function() {
                 continue;
             }
             // First, check if we're done.
-            var hasEnd = false;
             for (var j = 0; j < length; j++) {
                 if (line[j].toUpperCase() === '.END') {
                     hasEnd = true;
@@ -163,7 +163,7 @@ var assemble = (function() {
             // If the line's not blank, and it's not an .END,
             // then we had better be within memory bounds.
             if (pageAddress >= 0x10000) {
-                error('Outside maximum memory address! Aborting.');
+                error(i, 'Outside maximum memory address! Aborting.');
                 break;
             }
             // Otherwise, let's take a look at the data.
@@ -213,9 +213,12 @@ var assemble = (function() {
             }
             // Make sure this wasn't, e.g., a .BLKW on the edge of memory.
             if (pageAddress > 0x10000) {
-                error('Outside maximum memory address! Aborting.');
+                error(i, 'Outside maximum memory address! Aborting.');
                 break;
             }
+        }
+        if (!hasEnd) {
+            error(i, 'No .END directive found!');
         }
 
         // Package result and return.
