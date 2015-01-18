@@ -271,15 +271,19 @@
         <div class="alert alert-success">
           <strong>Awesome!</strong>
           Your code was assembled successfully.
-          You can continue to make changes and assemble again, or load it into the simulator when ready.
+          You can load your program directly into the simulator, or download the output object file and symbol table.
           <div class="btn-toolbar alert-buttons" role="toolbar">
+            <div class="btn-group" role="group">
+              <button class="btn btn-default" id="btn-download-symbol">Download Symbol Table</button>
+              <button class="btn btn-default" id="btn-download-object">Download Object File</button>
+            </div>
             <button class="btn btn-primary" id="btn-assembly-load">Load into Simulator</button>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" id="btn-assemble">Assemble</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-default" id="btn-assemble">Assemble</button>
       </div>
     </div>
   </div>

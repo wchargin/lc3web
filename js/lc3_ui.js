@@ -1053,12 +1053,29 @@ $(document).ready(function() {
         var $textarea = $('#assembly-input');
         var $btnAssemble = $('#btn-assemble');
         var $btnLoad = $('#btn-assembly-load');
+        var $btnDownloadObject = $('#btn-download-object');
+        var $btnDownloadSymbol = $('#btn-download-symbol');
 
         var $errorNoun = $('#assembly-error-noun');
         var $errorList = $('#assembly-errors');
 
         var $successAlert = $modal.find('.alert-success');
         var $errorAlert = $modal.find('.alert-danger');
+
+        var timestamp = function() {
+            return new Date().toISOString().replace(/-/g, '');
+        };
+        var encodeByte = function(b) {
+            return (b < 0x10 ? '%0' : '%') + b.toString(16);
+        };
+        var encodeWord = function(w) {
+            return encodeByte(w >> 8) + encodeByte(w & 0xFF);
+        }
+        var doDownload = function(encoded, prefix, suffix) {
+            var uri = 'data:application/octet-stream,' + encoded;
+            var name = prefix + timestamp() + suffix;
+            $('<a>').attr('href', uri).prop('download', name)[0].click();
+        };
 
         var assemblyResult = null;
         $btnAssemble.click(function() {
@@ -1097,13 +1114,52 @@ $(document).ready(function() {
             }
             $modal.modal('hide');
         });
+        $btnDownloadObject.click(function() {
+            if (assemblyResult === null) {
+                return;
+            }
+            var orig = assemblyResult.orig;
+            var mc = assemblyResult.machineCode;
+            var enc = new Array(mc.length + 1);
+            enc[0] = encodeWord(orig);
+            for (var i = 0; i < mc.length; i++) {
+                enc[i + 1] = encodeWord(mc[i]);
+            }
+            doDownload(enc.join(''), 'assembly-', '.obj');
+        });
+        $btnDownloadSymbol.click(function() {
+            if (assemblyResult === null) {
+                return;
+            }
+            var pre = '//%20';
+            var lines = [];
+            var symbols = assemblyResult.symbolTable;
+            lines.push(pre + 'Symbol%20table');
+            lines.push(pre + 'Symbol%20Name%20%20%20%20%20%20%20Page%20Address');
+            lines.push(pre + '----------------%20%20------------');
+            // Convert to 2D list (list of tuples)
+            var tuples = [];
+            for (var symbol in symbols) {
+                tuples.push([symbol, symbols[symbol]]);
+            }
+            tuples.sort(function(a, b) { return a[1] - b[1]; });
+            for (var i = 0; i < tuples.length; i++) {
+                var label = tuples[i][0];
+                var address = tuples[i][1];
+                var formattedName = label + Array(17 - label.length).join('%20');
+                var formattedAddress = LC3Util.toHexString(address).substring(1);
+                lines.push(pre + formattedName + '%20%20' + formattedAddress);
+            }
+            lines.push(''); // to get an end-of-file line terminator
+            doDownload(lines.join('%0A'), 'assembly-', '.sym');
+        });
 
         $('#mem-assemble').click(function() {
             $modal.modal();
         });
         $modal.bind('show.bs.modal', function() {
-            $errorAlert.slideUp();
-            $successAlert.slideUp();
+            $errorAlert.hide();
+            $successAlert.hide();
             assemblyResult = null;
         });
     })();
