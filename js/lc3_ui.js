@@ -422,7 +422,7 @@ $(document).ready(function() {
             $name.on('input', function() {
                 var linkage = $(this).data('linkage');
                 var oldName = $(this).data('old-name');
-                var newName = $(this).val().trim();
+                var newName = $(this).val();
 
                 var $cell = $(this).closest('td');
 
@@ -437,7 +437,8 @@ $(document).ready(function() {
                 var empty = (newName.length === 0);
                 var conflict = (newName in lc3.labelToAddress)
                     && (newName !== linkage.previous.labelName);
-                error = empty || conflict;
+                var invalid = newName.match(/[^A-Za-z_]/);
+                error = empty || conflict || invalid;
                 if (empty) {
                     $cell.find('.name-empty').slideDown();
                 } else {
@@ -447,6 +448,11 @@ $(document).ready(function() {
                     $cell.find('.name-conflict').slideDown();
                 } else {
                     $cell.find('.name-conflict').slideUp();
+                }
+                if (invalid) {
+                    $cell.find('.name-invalid').slideDown();
+                } else {
+                    $cell.find('.name-invalid').slideUp();
                 }
 
                 if (error) {
@@ -496,7 +502,7 @@ $(document).ready(function() {
                 if (linkage.hasError.name || linkage.hasError.address) {
                     return;
                 }
-                var name = linkage.name.val().trim();
+                var name = linkage.name.val();
                 var address = LC3Util.parseNumber(linkage.address.val());
                 if (linkage.previous.exists) {
                     lc3.unsetLabelGivenName(linkage.previous.labelName);
