@@ -2,14 +2,6 @@ $(document).ready(function() {
     var lc3 = new LC3();
     window.lc3 = lc3; // for ease of debugging
 
-    // Preload the LC3 (this is for ease of testing only)
-    (function() {
-        lc3.setLabel(0x3000, 'START');
-        lc3.setMemory(0x3000, 0xF020);
-        lc3.setMemory(0x3001, 0xF021);
-        lc3.setMemory(0x3002, 0x0FFD);
-    })();
-
     /*
      * Address of the top value in the table.
      */
