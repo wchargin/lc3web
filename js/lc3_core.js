@@ -642,3 +642,24 @@ LC3.prototype.clearBufferedKeys = function() {
 LC3.prototype.isRunning = function() {
     return (this.getMemory(this.mcr) & 0x8000) !== 0;
 }
+
+/*
+ * Load an assembly result into the LC-3.
+ * Return true on success, false on failure.
+ */
+LC3.prototype.loadAssembled = function(assemblyResult) {
+    if (assemblyResult.error) {
+        return false;
+    }
+    var orig = assemblyResult.orig;
+    var mc = assemblyResult.machineCode;
+    var symbols = assemblyResult.symbolTable;
+    // Add all the instructions.
+    for (var i = 0; i < mc.length; i++) {
+        this.setMemory(orig + i, mc[i]);
+    }
+    // Add all the symbols.
+    for (var labelName in symbols) {
+        this.setLabel(symbols[labelName], labelName);
+    }
+}

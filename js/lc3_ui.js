@@ -1096,22 +1096,7 @@ $(document).ready(function() {
             }
         });
         $btnLoad.click(function() {
-            if (assemblyResult === null) {
-                // The button should have been hidden...
-                // ...but bail anyway.
-                return;
-            }
-            var orig = assemblyResult.orig;
-            var mc = assemblyResult.machineCode;
-            var symbols = assemblyResult.symbolTable;
-            // Add all the instructions
-            for (var i = 0; i < mc.length; i++) {
-                lc3.setMemory(orig + i, mc[i]);
-            }
-            // Add all the symbols
-            for (var labelName in symbols) {
-                lc3.setLabel(symbols[labelName], labelName);
-            }
+            lc3.loadAssembled(assemblyResult);
             $modal.modal('hide');
         });
         $btnDownloadObject.click(function() {

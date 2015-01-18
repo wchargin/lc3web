@@ -260,7 +260,7 @@
         <h4 class="modal-title">Assemble</h4>
       </div>
       <div class="modal-body">
-        <p>Paste your assembly code below.</p>
+        <p>Paste your assembly code below, then click <strong>Assemble</strong>.</p>
         <textarea class="form-control" rows="16" id="assembly-input"></textarea>
         <div class="alert alert-danger">
           <strong>Oh no!</strong>
@@ -272,12 +272,14 @@
           <strong>Awesome!</strong>
           Your code was assembled successfully.
           You can load your program directly into the simulator, or download the output object file and symbol table.
-          <div class="btn-toolbar alert-buttons" role="toolbar">
+          <div class="alert-buttons" role="toolbar">
             <div class="btn-group" role="group">
               <button class="btn btn-default" id="btn-download-symbol">Download Symbol Table</button>
               <button class="btn btn-default" id="btn-download-object">Download Object File</button>
             </div>
-            <button class="btn btn-primary" id="btn-assembly-load">Load into Simulator</button>
+            <div class="btn-group" role="group">
+              <button class="btn btn-primary" id="btn-assembly-load">Load into Simulator</button>
+            </div>
           </div>
         </div>
       </div>
