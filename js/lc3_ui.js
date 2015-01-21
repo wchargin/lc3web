@@ -305,7 +305,7 @@ $(document).ready(function() {
         batchMode = false;
         refreshMemoryDisplay();
         refreshRegisters();
-        clearInterval(this.intervalID);
+        clearInterval(intervalID);
     };
 
     /*
@@ -816,8 +816,22 @@ $(document).ready(function() {
             $(this).addClass('bg-info');
         }).blur(function() {
             $(this).removeClass('bg-info');
-        }).keypress(function(e) {
+        })
+        // IE does weird stuff with ignoring some keypress events.
+        // To work around, we handle <Enter> separately, in keydown.
+        .keypress(function(e) {
             var key = e.which;
+            if (newlines.indexOf(key) !== -1) {
+                // Newlines handled in keydown
+                return;
+            }
+            lc3.sendKey(standardizeChar(key));
+        }).keydown(function(e) {
+            var key = e.which;
+            if (newlines.indexOf(key) === -1) {
+                // Non-newlines handled in keypress
+                return;
+            }
             lc3.sendKey(standardizeChar(key));
         });
 
