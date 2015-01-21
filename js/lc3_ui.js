@@ -256,7 +256,7 @@ $(document).ready(function() {
         $('.disabled-paused').prop('disabled', false);
 
         lastInstructionComplete = true;
-        this.intervalID = setInterval(function() {
+        intervalID = setInterval(function() {
             if (!lastInstructionComplete) {
                 // We'll get it at the next interval.
                 return;
