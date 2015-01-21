@@ -478,6 +478,7 @@ var assemble = (function() {
                     'BRNZP': 0,
                     'JMP':   12,
                     'JSR':   4,
+                    'JSRR':  4,
                     'LD':    2,
                     'LDR':   6,
                     'LDI':   10,
@@ -585,6 +586,7 @@ var assemble = (function() {
                         return;
                     }
                     instruction |= offset;
+                    instruction |= 0x0800; // immediate mode flag
                 } else if (command === 'JSRR') {
                     if (opcount !== 1) {
                         errorOpcount(l, 1, opcount);
@@ -652,7 +654,7 @@ var assemble = (function() {
                         errorOpcount(l, 2, opcount);
                     }
                     var dr = parseRegister(operands[0]);
-                    var sr = parseRegister(operands[0]);
+                    var sr = parseRegister(operands[1]);
                     if (isNaN(dr)) {
                         error(l, dr);
                         return;
@@ -662,7 +664,7 @@ var assemble = (function() {
                         return;
                     }
                     instruction |= (dr << 9);
-                    instruction |= (sr << 9);
+                    instruction |= (sr << 6);
                     instruction |= (1 << 6) - 1; // should be one-filled
                 } else if (command === 'RTI') {
                     console.log('warning: RTI not handled as nullary!');
