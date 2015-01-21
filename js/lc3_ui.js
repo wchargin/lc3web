@@ -849,11 +849,13 @@ $(document).ready(function() {
         var importObj = function(file) {
             var reader = new FileReader();
             reader.onload = function(e) {
-                var dataString = e.target.result;
-                var data = new Array(dataString.length / 2);
+                // Use a Uint16Array has platform-dependent endianness (!!!).
+                // Must manually use a Uint8Array to force little-endian.
+                var raw = new Uint8Array(e.target.result);
+                var data = new Array(raw.length / 2);
                 for (var i = 0; i < data.length; i ++) {
-                    var lo = dataString.charCodeAt(2 * i + 1);
-                    var hi = dataString.charCodeAt(2 * i) << 8;
+                    var lo = raw[2 * i + 1];
+                    var hi = raw[2 * i] << 8;
                     data[i] = lo | hi;
                 }
                 var orig = data[0];
@@ -863,7 +865,7 @@ $(document).ready(function() {
                     lc3.setMemory(address, value);
                 }
             };
-            reader.readAsBinaryString(file);
+            reader.readAsArrayBuffer(file);
         };
         var importSym = function(file) {
             var reader = new FileReader();
