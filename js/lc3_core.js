@@ -542,7 +542,7 @@ LC3.prototype.setMemory = function(address, data) {
         address: address,
         newValue: data
     };
-    this.memory[address] = data;
+    this.memory[address] = LC3Util.toUint16(data);
     this.notifyListeners(ev);
 };
 
@@ -578,6 +578,7 @@ LC3.prototype.getRegister = function(register) {
     return undefined;
 }
 LC3.prototype.setRegister = function(register, value) {
+    value = LC3Util.toUint16(value);
     var ev = {
         type: 'regset',
         register: undefined,
