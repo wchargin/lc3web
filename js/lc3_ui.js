@@ -261,9 +261,18 @@ $(document).ready(function() {
                 return;
             }
 
-            var done = false;
+            // We stop executing instructions when
+            //   (a) we hit an I/O instruction, or
+            //   (b) we process 256 instructions in a row.
+            // This is to prevent infinite loops from hogging the CPU.
+            var instructionsLeft = 0x100;
+
+            // Also, don't run at all if the LC-3 is halted.
+            var done = !lc3.isRunning();
+
             lastInstructionComplete = false;
-            do {
+            while (!done) {
+                instructionsLeft--;
                 var op = lc3.nextInstruction();
                 if (lc3.subroutineLevel <= target) {
                     // We've reached our target. Exit.
@@ -284,7 +293,11 @@ $(document).ready(function() {
                     // This is an IO instruction. Delay (but don't exit).
                     done = true;
                 }
-            } while (!done);
+                if (instructionsLeft <= 0) {
+                    // Delay (but don't exit) in case we have an infinite loop.
+                    done = true;
+                }
+            }
             lastInstructionComplete = true;
         }, intervalDelay);
     };
