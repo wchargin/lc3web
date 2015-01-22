@@ -1,6 +1,64 @@
 var assemble = (function() {
 
     /*
+     * Here follow a few helper functions used for parsing.
+     */
+
+    // Determines the specified register, or returns an error.
+    // Example: "R3" -> 3, "R" -> '<error text>'
+    var parseRegister = function(op) {
+        var cop = op.toUpperCase();
+        if (cop.charAt(0) !== 'R') {
+            return 'Expected register name; found "' + op + '"!';
+        } else if (cop.length === 1) {
+            return 'No register name provided!';
+        } else if (cop.length > 2) {
+            return 'Register names should be a single digit!';
+        } else {
+            var register = parseInt(op.substring(1));
+            if (isNaN(register) || register < 0 || register > 7) {
+                return 'No such register "' + op + '"!';
+            } else {
+                // Everything checks out.
+                return register;
+            }
+        }
+    };
+
+    // Determines the specified literal, or returns an error.
+    // No range checking or coercing (e.g., toUint16) is performed.
+    // Examples: "#7" -> 7, "-xBAD" -> -0xBAD, "label" -> '<error text>'
+    var parseLiteral = function(literal) {
+        var first = literal.charAt(0);
+        if (first === '#' || first.toLowerCase() === 'x') {
+            // Standard decimal or hexadecimal literal.
+            var invalidMessage;
+            var toParse;
+            var negate = (literal.charAt(1) === '-');
+            if (first === '#') {
+                toParse = literal.substring(negate ? 2 : 1);
+                invalidMessage = 'Invalid decimal literal!';
+            } else {
+                toParse = negate ? first + literal.substring(2) : literal;
+                invalidMessage = 'Invalid hexadecimal literal!';
+            }
+            var num = LC3Util.parseNumber(toParse);
+            if (isNaN(num)) {
+                return invalidMessage;
+            }
+            if (negate && num < 0) {
+                // No double negatives.
+                // (I tried a pun, but they were just too bad.)
+                return invalidMessage;
+            }
+            return negate ? -num : num;
+        } else {
+            return 'Invalid literal!';
+        }
+    };
+
+
+    /*
      * Splits a document string into lines,
      * and finds the whitespace-delimited portions of each line.
      * Quoting works, e.g.:
@@ -113,9 +171,18 @@ var assemble = (function() {
             errors.push('line ' + (lineIndex + 1) + ': ' + message);
         }
 
-        // Determines whether a potential label name is valid (alphabetic).
+        // Determines whether a potential label name is valid.
         var labelNameOkay = function(label) {
-            return !label.match(/[^A-Za-z_]/);
+            var x;
+            if (label.match(/[^A-Za-z0-9_]/)) {
+                // Invalid characters
+                return false;
+            }
+            if (!isNaN(parseLiteral(label))) {
+                // Valid literal; clash.
+                return false;
+            }
+            return true;
         };
 
         // These are all the instructions that take no operands.
@@ -182,7 +249,7 @@ var assemble = (function() {
                 // No instruction. This is a label-only line.
                 var label = line[0];
                 if (!labelNameOkay(label)) {
-                    error(i, 'Label name invalid (must be alphabetic only)!');
+                    error(i, 'Label name invalid!');
                 } else if (label in symbols) {
                     error(i, 'Label name "' + label + '" already exists!');
                 } else {
@@ -205,7 +272,16 @@ var assemble = (function() {
                 }
             } else if (length === 3) {
                 // This is a label, an instruction, and its operands.
-                symbols[line[0]] = pageAddress;
+                var label = line[0];
+                if (!labelNameOkay(label)) {
+                    error(i, 'Label name invalid!');
+                } else if (label in symbols) {
+                    error(i, 'Label name "' + label + '" already exists!');
+                } else {
+                    // We're okay.
+                    // Add the label, but don't increment the page address.
+                    symbols[label] = pageAddress;
+                }
                 pageAddress += lengthOf(line[1], line[2]);
             } else {
                 // Uh, that shouldn't be.
@@ -228,6 +304,7 @@ var assemble = (function() {
             return { symbols: symbols, length: pageAddress - orig };
         }
     };
+
 
     // Returns either:
     //   { error: <list of errors> } or
@@ -272,59 +349,6 @@ var assemble = (function() {
             var min = -(1 << (bits - 1));
             var max = (1 << (bits - 1)) - 1;
             return inRange(x, min, max);
-        };
-
-        // Determines the specified register, or returns an error.
-        // Example: "R3" -> 3, "R" -> '<error text>'
-        var parseRegister = function(op) {
-            var cop = op.toUpperCase();
-            if (cop.charAt(0) !== 'R') {
-                return 'Expected register name; found "' + op + '"!';
-            } else if (cop.length === 1) {
-                return 'No register name provided!';
-            } else if (cop.length > 2) {
-                return 'Register names should be a single digit!';
-            } else {
-                var register = parseInt(op.substring(1));
-                if (isNaN(register) || register < 0 || register > 7) {
-                    return 'No such register "' + op + '"!';
-                } else {
-                    // Everything checks out.
-                    return register;
-                }
-            }
-        };
-
-        // Determines the specified literal, or returns an error.
-        // No range checking or coercing (e.g., toUint16) is performed.
-        // Examples: "#7" -> 7, "-xBAD" -> -0xBAD, "label" -> '<error text>'
-        var parseLiteral = function(literal) {
-            var first = literal.charAt(0);
-            if (first === '#' || first.toLowerCase() === 'x') {
-                // Standard decimal or hexadecimal literal.
-                var invalidMessage;
-                var toParse;
-                var negate = (literal.charAt(1) === '-');
-                if (first === '#') {
-                    toParse = literal.substring(negate ? 2 : 1);
-                    invalidMessage = 'Invalid decimal literal!';
-                } else {
-                    toParse = negate ? first + literal.substring(2) : literal;
-                    invalidMessage = 'Invalid hexadecimal literal!';
-                }
-                var num = LC3Util.parseNumber(toParse);
-                if (isNaN(num)) {
-                    return invalidMessage;
-                }
-                if (negate && num < 0) {
-                    // No double negatives.
-                    // (I tried a pun, but they were just too bad.)
-                    return invalidMessage;
-                }
-                return negate ? -num : num;
-            } else {
-                return 'Invalid literal!';
-            }
         };
 
         // Parses a PC-relative offset, in either literal or label form.

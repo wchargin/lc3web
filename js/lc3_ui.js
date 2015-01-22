@@ -479,7 +479,8 @@ $(document).ready(function() {
                 var empty = (newName.length === 0);
                 var conflict = (newName in lc3.labelToAddress)
                     && (newName !== linkage.previous.labelName);
-                var invalid = newName.match(/[^A-Za-z_]/);
+                var invalid = newName.match(/[^A-Za-z0-9_]/)
+                    || !isNaN(LC3Util.parseNumber(newName));
                 error = empty || conflict || invalid;
                 if (empty) {
                     $cell.find('.name-empty').slideDown();
