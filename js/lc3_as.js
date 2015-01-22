@@ -648,7 +648,7 @@ var assemble = (function() {
                         error(l, 'Offset is out of range!');
                         return;
                     }
-                    instruction |= offset;
+                    instruction |= LC3Util.toUint16(offset) & 0x03F;
                 } else if (command === 'NOT') {
                     if (opcount !== 2) {
                         errorOpcount(l, 2, opcount);
