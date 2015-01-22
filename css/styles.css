@@ -23,6 +23,9 @@
 #memory-table {
     overflow-x: scroll;
 }
+#memory-table.disabled {
+    color: gray;
+}
 
 /* Configuration for the memory address table */
 button.memory-dropdown {

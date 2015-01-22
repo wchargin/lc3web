@@ -161,7 +161,7 @@ $(document).ready(function() {
 
         // Highlight the program counter.
         var pcClass = 'btn-primary';
-        if (lc3.pc === address) {
+        if (lc3.pc === address && !batchMode) {
             $dropdown.addClass(pcClass);
         } else {
             $dropdown.removeClass(pcClass);
@@ -219,6 +219,11 @@ $(document).ready(function() {
      */
     var refreshMemoryDisplay = function() {
         displayMemory(currentMemoryLocation);
+        if (batchMode) {
+            $('#memory-table').addClass('disabled');
+        } else {
+            $('#memory-table').removeClass('disabled');
+        }
     };
 
     /*
@@ -253,6 +258,8 @@ $(document).ready(function() {
 
         // Update form controls disabled status.
         updateButtons();
+        // Refresh display to hide the PC.
+        refreshMemoryDisplay();
 
         lastInstructionComplete = true;
         intervalID = setInterval(function() {
@@ -306,14 +313,14 @@ $(document).ready(function() {
      * Exit batch mode and refresh all displays to account for any changes.
      */
     var exitBatchMode = function() {
-        if ($('#follow-pc').prop('checked')) {
-            followPC();
-        }
-
         batchMode = false;
+
         refreshMemoryDisplay();
         refreshRegisters();
         clearInterval(intervalID);
+        if ($('#follow-pc').prop('checked')) {
+            followPC();
+        }
 
         // Update form controls disabled status.
         updateButtons();
