@@ -645,6 +645,13 @@ LC3.prototype.isRunning = function() {
 }
 
 /*
+ * Unhalts the clock after a HALT command.
+ */
+LC3.prototype.unhalt = function() {
+    this.setMemory(this.mcr, this.getMemory(this.mcr) | 0x8000);
+}
+
+/*
  * Load an assembly result into the LC-3.
  * Return true on success, false on failure.
  */

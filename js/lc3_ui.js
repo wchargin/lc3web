@@ -252,8 +252,7 @@ $(document).ready(function() {
         batchMode = true;
 
         // Update form controls disabled status.
-        $('.disabled-running').prop('disabled', true);
-        $('.disabled-paused').prop('disabled', false);
+        updateButtons();
 
         lastInstructionComplete = true;
         intervalID = setInterval(function() {
@@ -294,10 +293,6 @@ $(document).ready(function() {
      * Exit batch mode and refresh all displays to account for any changes.
      */
     var exitBatchMode = function() {
-        // Update form controls disabled status.
-        $('.disabled-running').prop('disabled', false);
-        $('.disabled-paused').prop('disabled', true);
-
         if ($('#follow-pc').prop('checked')) {
             followPC();
         }
@@ -306,6 +301,34 @@ $(document).ready(function() {
         refreshMemoryDisplay();
         refreshRegisters();
         clearInterval(intervalID);
+
+        // Update form controls disabled status.
+        updateButtons();
+    };
+
+    /*
+     * Updates the 'disabled' state of dynamically disabled (.dyndis) buttons.
+     */
+    var updateButtons = function() {
+        var running = batchMode;
+        var halted = !lc3.isRunning();
+        $('.dyndis').each(function() {
+            var disabled = false;
+            var $this = $(this);
+            if ($this.hasClass('disabled-running')) {
+                disabled |= running;
+            }
+            if ($this.hasClass('disabled-paused')) {
+                disabled |= !running;
+            }
+            if ($this.hasClass('disabled-halted')) {
+                disabled |= halted;
+            }
+            if ($this.hasClass('disabled-unhalted')) {
+                disabled |= !halted;
+            }
+            $this.prop('disabled', disabled);
+        });
     };
 
     /*
@@ -432,7 +455,6 @@ $(document).ready(function() {
                 }
 
                 var error = false;
-                console.log(newName in lc3.labelToAddress);
 
                 var empty = (newName.length === 0);
                 var conflict = (newName in lc3.labelToAddress)
@@ -783,6 +805,7 @@ $(document).ready(function() {
             if ($('#follow-pc').prop('checked')) {
                 followPC();
             }
+            updateButtons();
         });
         $('#control-next').click(function() {
             // Keep going until we get back to this level.
@@ -801,13 +824,25 @@ $(document).ready(function() {
         });
         $('#control-run').click(function() {
             // Keep going forever.
-            target = -1;
+            // -1 isn't good enough:
+            // if there are more RETs than JSR/JSRR/TRAPs,
+            // which can happen if the PC is modified manually
+            // or execution flows into a subroutine,
+            // then the subroutine level can be negative.
+            // But it can't be less than -Infinity!
+            // (at least, it would take a while)
+            target = -Infinity;
             enterBatchMode();
         });
         $('#control-pause').click(function() {
             exitBatchMode();
         });
+        $('#control-unhalt').click(function() {
+            lc3.unhalt();
+            updateButtons();
+        });
         $('#control-buttons button').tooltip();
+        updateButtons();
     })();
 
     // Set up console for key events and clear buttons.
