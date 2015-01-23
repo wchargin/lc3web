@@ -107,10 +107,14 @@ $(document).ready(function() {
      * Listen for memory changes.
      */
     lc3.addListener(function (ev) {
-        if (batchMode && ev.type !== 'keyout') {
-            return;
-        }
         var type = ev.type;
+        if (batchMode) {
+            // Skip events that massively update the DOM and cause lag.
+            // Keep the I/O events, though.
+            if (type === 'memset' || type === 'regset') {
+                return;
+            }
+        }
         if (type === 'memset') {
             var address = ev.address;
             updateMemoryRow(address);
