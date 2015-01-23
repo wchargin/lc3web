@@ -670,4 +670,6 @@ LC3.prototype.loadAssembled = function(assemblyResult) {
     for (var labelName in symbols) {
         this.setLabel(symbols[labelName], labelName);
     }
+    // Snap the PC to the origin point.
+    this.setRegister('pc', orig);
 }

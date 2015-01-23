@@ -118,6 +118,9 @@ $(document).ready(function() {
             if (ev.register === 'pc') {
                 // We might have to change the highlighting of rows.
                 refreshMemoryDisplay();
+                if ($('#follow-pc').prop('checked')) {
+                    followPC();
+                }
             }
             updateRegister(ev.register);
         } else if (type === 'labelset' || type === 'labelunset') {
@@ -934,6 +937,7 @@ $(document).ready(function() {
                     var value = data[i];
                     lc3.setMemory(address, value);
                 }
+                lc3.setRegister('pc', orig);
             };
             reader.readAsArrayBuffer(file);
         };
