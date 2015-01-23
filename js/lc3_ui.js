@@ -133,6 +133,8 @@ $(document).ready(function() {
             var $console = $('#console-contents');
             var ch = String.fromCharCode(standardizeChar(ev.value));
             $console.text($console.text() + ch);
+            // Scroll to the bottom.
+            $console.prop('scrollTop', $console.prop('scrollHeight'));
         } else {
             // handle this?
         }
