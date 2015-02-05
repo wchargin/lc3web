@@ -51,6 +51,9 @@ var LC3 = function() {
     this.mcr =  0xFFFE;
     this.ioLocations = [this.kbsr, this.kbdr, this.dsr, this.ddr];
 
+    this.kbiv = 0x0180;
+    this.div  = 0x0181; // TODO is this right? not specified
+
     this.namedTrapVectors = {
         0x20: 'GETC',
         0x21: 'OUT',
@@ -107,6 +110,9 @@ LC3.prototype.nextInstruction = function() {
 
     // Display any output since last time.
     this.updateIO();
+
+    // Check for I/O interrupts.
+    this.checkInterrupts();
 
     return op;
 };
@@ -323,9 +329,8 @@ LC3.prototype.execute = function(op, address, operand) {
         case 8: // RTI
             // TODO handle privilege mode exception
             var r6 = this.r[6];
-            var temp = this.readMemory(r6 + 1);
-            this.setRegister('pc', r6);
-            this.setRegister('psr', temp);
+            this.setRegister('pc', this.readMemory(r6));
+            this.setRegister('psr', this.readMemory(r6 + 1));
             this.setRegister(6, r6 + 2);
             return null;
         case 3: // ST
@@ -673,3 +678,39 @@ LC3.prototype.loadAssembled = function(assemblyResult) {
     // Snap the PC to the origin point.
     this.setRegister('pc', orig);
 }
+
+LC3.prototype.checkInterrupts = function() {
+    // Mask of only the ready and interrupt-enabled bits
+    var interruptMask = 0xC000;
+    // We're going to go with "no interrupting interrupts" for now.
+    if ((this.psr & 0x8000) === 0) {
+        return;
+    }
+    // Check the keyboard
+    if ((this.getMemory(this.kbsr) & interruptMask) === interruptMask) {
+        console.log('kbi');
+        this.interrupt(this.getMemory(this.kbiv));
+    }
+    // Check the display
+    if ((this.getMemory(this.dsr) & interruptMask) === interruptMask) {
+        console.log('di');
+        this.setRegister('pc', this.getMemory(this.div));
+    }
+};
+
+LC3.prototype.interrupt = function(newPC) {
+    // Get supervisor stack pointer
+    var ssp = this.getRegister(6);
+    // Stash PSR
+    ssp--;
+    this.setMemory(ssp, this.psr);
+    // Stash PC
+    ssp--;
+    this.setMemory(ssp, this.pc);
+    // Set priority level and clear condition codes.
+    this.psr &= 0x7FF8;
+    // Set new PC
+    this.setRegister('pc', newPC);
+    // Set new supervisor stack pointer
+    this.setRegister(6, ssp);
+};
