@@ -1,5 +1,9 @@
 /* styles.css for web-based LC3 simulator */
 
+body {
+    overflow-y: scroll;
+}
+
 #scroll-container
 {
     text-align: center;

@@ -140,6 +140,16 @@ ga('send', 'pageview');
           <label><input type="checkbox" id="follow-pc" checked="checked">Follow PC</label>
         </div>
       </div>
+      <div class="alert alert-danger hidden-alert exception" data-exception="privilege">
+        <strong>Privilege mode exception!</strong>
+        An RTI instruction was executed while in user mode.
+        The machine has been halted.
+      </div>
+      <div class="alert alert-danger hidden-alert exception" data-exception="opcode">
+        <strong>Illegal opcode exception!</strong>
+        The reserved instruction was executed.
+        The machine has been halted.
+      </div>
     </div>
     <div class="col-md-6">
       <h1>Console</h1>

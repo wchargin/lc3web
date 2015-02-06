@@ -327,11 +327,20 @@ LC3.prototype.execute = function(op, address, operand) {
         case 9: // NOT
             return LC3Util.toUint16(~this.getRegister(op.sr));
         case 8: // RTI
-            // TODO handle privilege mode exception
-            var r6 = this.r[6];
-            this.setRegister('pc', this.readMemory(r6));
-            this.setRegister('psr', this.readMemory(r6 + 1));
-            this.setRegister(6, r6 + 2);
+            if ((this.psr & 0x8000) !== 0) {
+                // Privilege mode exception
+                var ev = {
+                    type: 'exception',
+                    exception: 'privilege'
+                };
+                this.notifyListeners(ev);
+                this.halt();
+            } else {
+                var r6 = this.r[6];
+                this.setRegister('pc', this.readMemory(r6));
+                this.setRegister('psr', this.readMemory(r6 + 1));
+                this.setRegister(6, r6 + 2);
+            }
             return null;
         case 3: // ST
             if (this.ioLocations.indexOf(address) !== -1) {
@@ -356,6 +365,15 @@ LC3.prototype.execute = function(op, address, operand) {
             this.setRegister('pc', operand);
             // internal: also increment the depth
             this.subroutineLevel++;
+            return null;
+        case 13:
+            // Illegal opcode exception
+            var ev = {
+                type: 'exception',
+                exception: 'opcode'
+            };
+            this.notifyListeners(ev);
+            this.halt();
             return null;
         default:
             return undefined;
@@ -647,6 +665,13 @@ LC3.prototype.clearBufferedKeys = function() {
  */
 LC3.prototype.isRunning = function() {
     return (this.getMemory(this.mcr) & 0x8000) !== 0;
+}
+
+/*
+ * Manually initiates the equivalent of a HALT command.
+ */
+LC3.prototype.halt = function() {
+    this.setMemory(this.mcr, this.getMemory(this.mcr) & 0x7FFF);
 }
 
 /*

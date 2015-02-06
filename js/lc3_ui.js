@@ -139,6 +139,8 @@ $(document).ready(function() {
             $console.text($console.text() + ch);
             // Scroll to the bottom.
             $console.prop('scrollTop', $console.prop('scrollHeight'));
+        } else if (type === 'exception') {
+            $('.exception[data-exception=' + ev.exception + ']').slideDown();
         } else {
             // handle this?
         }
@@ -279,9 +281,9 @@ $(document).ready(function() {
 
             // We stop executing instructions when
             //   (a) we hit an I/O instruction, or
-            //   (b) we process 256 instructions in a row.
-            // This is to prevent infinite loops from hogging the CPU.
-            var instructionsLeft = 0x100;
+            //   (b) we process 4096 instructions in a row.
+            // This prevents infinite loops from hogging the host CPU.
+            var instructionsLeft = 0x1000;
 
             // Also, don't run at all if the LC-3 is halted.
             var done = !lc3.isRunning();
@@ -869,6 +871,7 @@ $(document).ready(function() {
         });
         $('#control-unhalt').click(function() {
             lc3.unhalt();
+            $('.exception').slideUp();
             updateButtons();
         });
         $('#control-buttons button').tooltip();
