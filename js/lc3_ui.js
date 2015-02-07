@@ -1074,6 +1074,10 @@ $(document).ready(function() {
                 $invalidList.empty();
             });
         });
+        $invalid.find('#invalid-open-assembler').click(function() {
+            $modal.modal('hide');
+            $('#assemble-modal').modal('show');
+        });
         $('#success-confirm').click(function() {
             $dropArea.slideUp();
             $invalid.slideUp();
@@ -1133,7 +1137,9 @@ $(document).ready(function() {
     (function() {
         var $modal = $('#assemble-modal');
 
+        var $inputContainer = $('#assembly-input-container');
         var $textarea = $('#assembly-input');
+        var $releaseMessage = $('#release-message');
         var $btnAssemble = $('#btn-assemble');
         var $btnLoad = $('#btn-assembly-load');
         var $btnDownloadObject = $('#btn-download-object');
@@ -1222,12 +1228,49 @@ $(document).ready(function() {
             doDownload(lines.join('%0A'), 'assembly-', '.sym');
         });
 
+        $inputContainer.bind({
+            dragover: function() {
+                $releaseMessage.slideDown();
+                return false;
+            },
+            dragend: function() {
+                $releaseMessage.slideUp();
+                return false;
+            },
+            dragleave: function() {
+                $releaseMessage.slideUp();
+                return false;
+            },
+            drop: function(e) {
+                e = e || window.event;
+                e = e.originalEvent || e;
+                e.preventDefault();
+                $releaseMessage.slideUp();
+
+                var files = (e.files || e.dataTransfer.files);
+                if (!files) {
+                    return;
+                }
+                var file = files[0];
+                if (!file) {
+                    return;
+                }
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var dataString = e.target.result;
+                    $textarea.val(dataString);
+                };
+                reader.readAsText(file);
+            }
+        });
+
         $('#mem-assemble').click(function() {
             $modal.modal();
         });
         $modal.bind('show.bs.modal', function() {
             $errorAlert.hide();
             $successAlert.hide();
+            $releaseMessage.hide();
             assemblyResult = null;
         });
     })();

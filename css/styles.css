@@ -1,6 +1,6 @@
 /* styles.css for web-based LC3 simulator */
 
-body {
+html {
     overflow-y: scroll;
 }
 
@@ -92,6 +92,13 @@ footer {
 .alert-buttons {
     margin-top: 1em;
     text-align: right;
+}
+
+#release-message {
+    font-size: 200%;
+    color: gray;
+    text-align: center;
+    margin: 0.5em auto;
 }
 
 .modal .alert {

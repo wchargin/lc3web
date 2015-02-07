@@ -249,6 +249,7 @@ ga('send', 'pageview');
           <ul id="invalid-files">
           </ul>
           <div class="btn-toolbar alert-buttons" role="toolbar">
+            <button class="btn btn-default" id="invalid-open-assembler">Open Assembler</button>
             <button class="btn btn-default" id="invalid-dismiss">Dismiss</button>
           </div>
         </div>
@@ -283,8 +284,16 @@ ga('send', 'pageview');
         <h4 class="modal-title">Assemble</h4>
       </div>
       <div class="modal-body">
-        <p>Paste your assembly code below, then click <strong>Assemble</strong>.</p>
-        <textarea class="form-control" rows="16" id="assembly-input"></textarea>
+        <p>
+        <strong>Paste</strong> your assembly code below, or <strong>drop a file</strong> on the textbox.
+        Click the <strong>Assemble</strong> button to assemble your code.
+        </p>
+        <div id="assembly-input-container">
+          <textarea class="form-control" rows="16" id="assembly-input"></textarea>
+          <div id="release-message">
+            <span>Drop file to load contents</span>
+          </div>
+        </div>
         <div class="alert alert-danger">
           <strong>Oh no!</strong>
           You've got <span id="assembly-error-noun"></span> in your assembly code:
