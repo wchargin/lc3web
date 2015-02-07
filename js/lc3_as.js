@@ -196,7 +196,10 @@ var assemble = (function() {
             if (command === '.FILL') {
                 return 1;
             } else if (command === '.BLKW') {
-                var count = LC3Util.parseNumber(operand);
+                var count = parseLiteral(operand);
+                if (isNaN(count)) {
+                    count = LC3Util.parseNumber(operand);
+                }
                 return count === LC3Util.toUint16(count) ? count : null;
             } else if (command === '.STRINGZ') {
                 // Get the inside of the string.
@@ -409,12 +412,18 @@ var assemble = (function() {
                     }
                 } else if (command === '.BLKW') {
                     // The operand should be a non-negative integer.
-                    var length = LC3Util.parseNumber(operand);
+                    // We'll be a little lenient, and allow either
+                    // an actual literal (#1234 or x1234)
+                    // or just a raw decimal (1234).
+                    var length = parseLiteral(operand);
                     if (isNaN(length)) {
-                        error(l, 'Operand to .BLKW is not a number!');
+                        length = LC3Util.parseNumber(operand);
+                    }
+                    if (isNaN(length)) { // still, with new value
+                        error(l, 'Operand to .BLKW is not a valid literal!');
                         return;
                     } else if (length < 0) {
-                        error(l, 'Operand to .BLKW must be positive!');
+                        error(l, 'Operand to .BLKW must be non-negative!');
                         return;
                     } else {
                         for (var i = 0; i < length; i++) {
