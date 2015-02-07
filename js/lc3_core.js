@@ -51,8 +51,13 @@ var LC3 = function() {
     this.mcr =  0xFFFE;
     this.ioLocations = [this.kbsr, this.kbdr, this.dsr, this.ddr];
 
+    // Device interrupt vectors
     this.kbiv = 0x0180;
     this.div  = 0x0181; // TODO is this right? not specified
+
+    // Device priority levels
+    this.kbpl = 2;
+    this.dpl  = 1;
 
     this.namedTrapVectors = {
         0x20: 'GETC',
@@ -707,35 +712,43 @@ LC3.prototype.loadAssembled = function(assemblyResult) {
 LC3.prototype.checkInterrupts = function() {
     // Mask of only the ready and interrupt-enabled bits
     var interruptMask = 0xC000;
-    // We're going to go with "no interrupting interrupts" for now.
-    if ((this.psr & 0x8000) === 0) {
-        return;
-    }
     // Check the keyboard
     if ((this.getMemory(this.kbsr) & interruptMask) === interruptMask) {
-        console.log('kbi');
-        this.interrupt(this.getMemory(this.kbiv));
+        this.interrupt(this.kbpl, this.getMemory(this.kbiv));
     }
     // Check the display
     if ((this.getMemory(this.dsr) & interruptMask) === interruptMask) {
-        console.log('di');
-        this.setRegister('pc', this.getMemory(this.div));
+        this.interrupt(this.dpl, this.getMemory(this.div));
     }
 };
 
-LC3.prototype.interrupt = function(newPC) {
+LC3.prototype.interrupt = function(priorityLevel, newPC) {
+    // Check to see if the new priority level is higher than the current.
+    // If not, don't interrupt.
+    if (priorityLevel <= ((this.psr & 0x0700) >> 8)) {
+        return;
+    }
+
     // Get supervisor stack pointer
     var ssp = this.getRegister(6);
+
     // Stash PSR
     ssp--;
     this.setMemory(ssp, this.psr);
+
     // Stash PC
     ssp--;
     this.setMemory(ssp, this.pc);
-    // Set priority level and clear condition codes.
-    this.psr &= 0x7FF8;
+
+    // Clear privilege, priority, and condition codes
+    // (clear bits 15, 10:8, and 2:0),
+    // then set the new priority level.
+    this.psr &= 0x78F8;
+    this.psr |= (priorityLevel & 0x7) << 8;
+
     // Set new PC
     this.setRegister('pc', newPC);
+
     // Set new supervisor stack pointer
     this.setRegister(6, ssp);
 };
