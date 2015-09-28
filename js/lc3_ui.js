@@ -252,7 +252,12 @@ $(document).ready(function() {
      * Updates the given register display with the new value.
      */
     var updateRegister = function(register) {
-            registers[register].text(LC3Util.toHexString(lc3.getRegister(register)));
+        var $register = registers[register];
+        if (register === 'cc') {
+            $register.text(lc3.formatConditionCode());
+        } else {
+            $register.text(LC3Util.toHexString(lc3.getRegister(register)));
+        }
     };
 
     var refreshRegisters = function() {
@@ -645,6 +650,19 @@ $(document).ready(function() {
             $registersSpecial.append($row);
             registers[register] = $value;
         }
+
+        // Condition codes are even more special
+        var $row = $('<div>')
+            .addClass('col-xs-12 col-sm-3');
+        var $name = $('<span>')
+            .addClass('register-name')
+            .text("CC");
+        var $value = $('<span>')
+            .addClass('register-value hex-no-tooltip')
+            .text(lc3.formatConditionCode());
+        $row.append($name).append(': ').append($value);
+        $registersSpecial.append($row);
+        registers['cc'] = $value;
     })();
 
     // Add the memory addresses and set up the memory display.
@@ -755,6 +773,7 @@ $(document).ready(function() {
                 $oldThis.popover('hide');
                 var num = LC3Util.toUint16(LC3Util.parseNumber($field.val()));
                 updateValue(linkage, num);
+                refreshRegisters();
             };
 
             var $cancel = $('<button>').addClass('btn').appendTo($buttons)
@@ -838,6 +857,7 @@ $(document).ready(function() {
                 followPC();
             }
             updateButtons();
+            refreshRegisters();
         });
         $('#control-next').click(function() {
             // Keep going until we get back to this level.
@@ -873,6 +893,7 @@ $(document).ready(function() {
             lc3.unhalt();
             $('.exception').slideUp();
             updateButtons();
+            refreshRegisters();
         });
         $('#control-buttons button').tooltip();
         updateButtons();

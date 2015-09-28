@@ -630,6 +630,19 @@ LC3.prototype.setRegister = function(register, value) {
     return false;
 }
 
+LC3.prototype.formatConditionCode = function() {
+    var code = this.getConditionCode();
+    if (code === undefined) {
+        return "Invalid";
+    } else if (code > 0) {
+        return "P";
+    } else if (code < 0) {
+        return "N";
+    } else {
+        return "Z";
+    }
+}
+
 LC3.prototype.sendKey = function(character) {
     this.bufferedKeys.enqueue(character);
     this.notifyListeners({ type: 'bufferchange' });
