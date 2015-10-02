@@ -94,7 +94,7 @@ footer {
     text-align: right;
 }
 
-#release-message {
+#release-message, #raw-release-message {
     font-size: 200%;
     color: gray;
     text-align: center;
@@ -105,6 +105,6 @@ footer {
     margin-top: 1em;
 }
 
-#assembly-input {
+#assembly-input, #raw-input {
     font-family: monospace;
 }

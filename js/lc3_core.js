@@ -707,17 +707,21 @@ LC3.prototype.loadAssembled = function(assemblyResult) {
     if (assemblyResult.error) {
         return false;
     }
+
     var orig = assemblyResult.orig;
     var mc = assemblyResult.machineCode;
-    var symbols = assemblyResult.symbolTable;
+    var symbols = assemblyResult.symbolTable || {};
+
     // Add all the instructions.
     for (var i = 0; i < mc.length; i++) {
         this.setMemory(orig + i, mc[i]);
     }
+
     // Add all the symbols.
     for (var labelName in symbols) {
         this.setLabel(symbols[labelName], labelName);
     }
+
     // Snap the PC to the origin point.
     this.setRegister('pc', orig);
 }

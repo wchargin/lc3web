@@ -1296,6 +1296,116 @@ $(document).ready(function() {
         });
     })();
 
+    // Configure the raw code modal
+    (function() {
+        var $modal = $('#raw-modal');
+
+        var $inputContainer = $('#raw-input-container');
+        var $textarea = $('#raw-input');
+        var $releaseMessage = $('#raw-release-message');
+        var $btnProcess = $('#btn-process-raw');
+        var $btnLoad = $('#btn-raw-load');
+        var $btnDownloadObject = $('#btn-download-raw-object');
+
+        var $errorNoun = $('#raw-error-noun');
+        var $errorTag = $('#raw-error');
+
+        var $successAlert = $modal.find('.alert-success');
+        var $errorAlert = $modal.find('.alert-danger');
+
+        var timestamp = function() {
+            return new Date().toISOString().replace(/-/g, '');
+        };
+        var encodeByte = function(b) {
+            return (b < 0x10 ? '%0' : '%') + b.toString(16);
+        };
+        var encodeWord = function(w) {
+            return encodeByte(w >> 8) + encodeByte(w & 0xFF);
+        }
+        var doDownload = function(encoded, prefix, suffix) {
+            var uri = 'data:application/octet-stream,' + encoded;
+            var name = prefix + timestamp() + suffix;
+            $('<a>').attr('href', uri).prop('download', name)[0].click();
+        };
+
+        var assemblyResult = null;
+        $btnProcess.click(function() {
+            var code = $textarea.val();
+            assemblyResult = hexbin(code);
+            if (assemblyResult.error) {
+                $errorTag.text(assemblyResult.error);
+                $errorAlert.slideDown();
+                $successAlert.slideUp();
+            } else {
+                $successAlert.slideDown();
+                $errorAlert.slideUp();
+            }
+        });
+        $btnLoad.click(function() {
+            lc3.loadAssembled(assemblyResult);
+            $modal.modal('hide');
+        });
+        $btnDownloadObject.click(function() {
+            if (assemblyResult === null) {
+                return;
+            }
+            var orig = assemblyResult.orig;
+            var mc = assemblyResult.machineCode;
+            var enc = new Array(mc.length + 1);
+            enc[0] = encodeWord(orig);
+            for (var i = 0; i < mc.length; i++) {
+                enc[i + 1] = encodeWord(mc[i]);
+            }
+            doDownload(enc.join(''), 'raw-', '.obj');
+        });
+
+        $inputContainer.bind({
+            dragover: function() {
+                $releaseMessage.slideDown();
+                return false;
+            },
+            dragend: function() {
+                $releaseMessage.slideUp();
+                return false;
+            },
+            dragleave: function() {
+                $releaseMessage.slideUp();
+                return false;
+            },
+            drop: function(e) {
+                e = e || window.event;
+                e = e.originalEvent || e;
+                e.preventDefault();
+                $releaseMessage.slideUp();
+
+                var files = (e.files || e.dataTransfer.files);
+                if (!files) {
+                    return;
+                }
+                var file = files[0];
+                if (!file) {
+                    return;
+                }
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var dataString = e.target.result;
+                    $textarea.val(dataString);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        $('#mem-raw').click(function() {
+            $modal.modal();
+        });
+        $modal.bind('show.bs.modal', function() {
+            $errorAlert.hide();
+            $successAlert.hide();
+            $releaseMessage.hide();
+            assemblyResult = null;
+        });
+    })();
+
     // Activate!
     $('#container-wait').slideUp();
     $('#container-main').fadeIn();
