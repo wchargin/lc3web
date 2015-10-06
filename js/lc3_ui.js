@@ -57,6 +57,23 @@ $(document).ready(function() {
     var lastInstructionComplete;
 
     /*
+     * Send a tracking event to Google Analytics.
+     * Don't worry---this doesn't track any personal information!
+     * It just gets information about, e.g.,
+     * how many times people click "Assemble," etc.
+     */
+    var sendEvent = function(category, action, label) {
+        if (window.ga) {
+            window.ga('send', {
+                hitType: 'event',
+                eventCategory: name,
+                eventAction: action,
+                eventLabel: label,
+            });
+        }
+    };
+
+    /*
      * Standardize a character code (input is integer, not string).
      * Newlines will be converted to the desired format.
      * Other characters will pass through unchanged.
@@ -1150,6 +1167,7 @@ $(document).ready(function() {
     // Upload object
     (function() {
         $('#mem-upload-object').click(function() {
+            sendEvent('upload', 'modal');
             $('#load-object').modal();
         });
     })();
@@ -1286,6 +1304,7 @@ $(document).ready(function() {
         });
 
         $('#mem-assemble').click(function() {
+            sendEvent('assemble', 'modal');
             $modal.modal();
         });
         $modal.bind('show.bs.modal', function() {
@@ -1396,6 +1415,7 @@ $(document).ready(function() {
         });
 
         $('#mem-raw').click(function() {
+            sendEvent('raw-code', 'modal');
             $modal.modal();
         });
         $modal.bind('show.bs.modal', function() {
