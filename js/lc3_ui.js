@@ -64,12 +64,7 @@ $(document).ready(function() {
      */
     var sendEvent = function(category, action, label) {
         if (window.ga) {
-            window.ga('send', {
-                hitType: 'event',
-                eventCategory: name,
-                eventAction: action,
-                eventLabel: label,
-            });
+            window.ga('send', 'event', category, action, label);
         }
     };
 
