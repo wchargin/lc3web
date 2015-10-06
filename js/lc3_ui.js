@@ -1167,7 +1167,7 @@ $(document).ready(function() {
     // Upload object
     (function() {
         $('#mem-upload-object').click(function() {
-            sendEvent('upload', 'modal');
+            sendEvent('upload', 'open_upload_modal');
             $('#load-object').modal();
         });
     })();
@@ -1304,7 +1304,7 @@ $(document).ready(function() {
         });
 
         $('#mem-assemble').click(function() {
-            sendEvent('assemble', 'modal');
+            sendEvent('assemble', 'open_assemble_modal');
             $modal.modal();
         });
         $modal.bind('show.bs.modal', function() {
@@ -1415,7 +1415,7 @@ $(document).ready(function() {
         });
 
         $('#mem-raw').click(function() {
-            sendEvent('raw-code', 'modal');
+            sendEvent('raw', 'open_raw_modal');
             $modal.modal();
         });
         $modal.bind('show.bs.modal', function() {
