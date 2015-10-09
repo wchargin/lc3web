@@ -603,6 +603,7 @@ $(document).ready(function() {
 
         $('#manage-labels-button').click(function() {
             $('#label-manager').modal('show');
+            sendEvent('labels', 'open_labels_modal');
         });
         $('#label-manager').on('show.bs.modal', function() {
             // Remove all rows except for the last (the new label row)
@@ -870,21 +871,25 @@ $(document).ready(function() {
             }
             updateButtons();
             refreshRegisters();
+            sendEvent('controls', 'controls_step');
         });
         $('#control-next').click(function() {
             // Keep going until we get back to this level.
             target = lc3.subroutineLevel;
             enterBatchMode();
+            sendEvent('controls', 'controls_next');
         });
         $('#control-continue').click(function() {
             // Machine was paused or hit a breakpoint.
             // Keep the original target level.
             enterBatchMode();
+            sendEvent('controls', 'controls_continue');
         });
         $('#control-finish').click(function() {
             // Keep going until we go one level up.
             target = lc3.subroutineLevel - 1;
             enterBatchMode();
+            sendEvent('controls', 'controls_finish');
         });
         $('#control-run').click(function() {
             // Keep going forever.
@@ -897,15 +902,18 @@ $(document).ready(function() {
             // (at least, it would take a while)
             target = -Infinity;
             enterBatchMode();
+            sendEvent('controls', 'controls_run');
         });
         $('#control-pause').click(function() {
             exitBatchMode();
+            sendEvent('controls', 'controls_pause');
         });
         $('#control-unhalt').click(function() {
             lc3.unhalt();
             $('.exception').slideUp();
             updateButtons();
             refreshRegisters();
+            sendEvent('controls', 'controls_unhalt');
         });
         $('#control-buttons button').tooltip();
         updateButtons();
