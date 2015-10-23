@@ -1544,7 +1544,7 @@ var assembleBeta = (function() {
         var finalState = reduceProgram(lines, begin, handlers, initialState);
 
         if (!finalState.seenEndDirective) {
-            error("no .END directive found!");
+            throw new Error("no .END directive found!");
         }
 
         return {
