@@ -300,7 +300,7 @@ ga('send', 'pageview');
           You've got <span id="assembly-error-noun"></span> in your assembly code:
           <ul id="assembly-errors">
           </ul>
-          <p style="font-size: 10pt">
+          <p style="font-size: 10pt" id="use-beta">
           Having problems with the assembler?
           Think it's my fault?
           It might be!
@@ -391,6 +391,12 @@ ga('send', 'pageview');
 <script src="js/lc3_as.js"></script>
 <script src="js/lc3_hexbin.js"></script>
 <script src="js/lc3_ui.js"></script>
+<script>
+if (window.location.hash === "#asmfix") {
+    // Already on the beta version!
+    $("#use-beta").remove();
+}
+</script>
 
 </body>
 
