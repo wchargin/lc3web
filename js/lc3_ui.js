@@ -67,6 +67,10 @@ $(document).ready(function() {
             window.ga('send', 'event', category, action, label);
         }
     };
+    if (window.ga) {
+        var path = window.location.pathname + window.location.hash;
+        window.ga('send', 'pageview', path);
+    }
 
     /*
      * Standardize a character code (input is integer, not string).
