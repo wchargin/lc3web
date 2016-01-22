@@ -618,7 +618,7 @@ var assemble = (function() {
      */
 
     function determineRequiredMemory(command, operand) {
-        switch (command) {
+        switch (command.toUpperCase()) {
             case ".FILL":
                 return 1;
             case ".BLKW":
@@ -688,7 +688,7 @@ var assemble = (function() {
                             throw new Error('expected ' + command + ' directive ' + 'to have exactly one operand, ' + ('but found ' + operands.length));
                         }
                     };
-                    switch (command) {
+                    switch (command.toUpperCase()) {
                         case ".BLKW":
                         case ".FILL":
                             ensureUnary();
