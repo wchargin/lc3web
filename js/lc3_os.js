@@ -59,41 +59,15 @@ var lc3osSymbols;
         0x0462: 0xF3FD,
         0x0463: 0xF3FE,
         // Implementation of IN
-        0x04A0: 0x3E27,
-        0x04A1: 0x3625,
-        0x04A2: 0x3423,
-        0x04A3: 0x3221,
-        0x04A4: 0x201F,
-        0x04A5: 0x4813,
-        0x04A6: 0xE222,
-        0x04A7: 0x6040,
-        0x04A8: 0x0403,
-        0x04A9: 0x480F,
-        0x04AA: 0x1261,
-        0x04AB: 0x0FFB,
-        0x04AC: 0xA616,
-        0x04AD: 0x07FE,
-        0x04AE: 0xA013,
-        0x04AF: 0x1420,
-        0x04B0: 0x4808,
-        0x04B1: 0x2012,
-        0x04B2: 0x4806,
-        0x04B3: 0x10A0,
-        0x04B4: 0x2210,
-        0x04B5: 0x2410,
-        0x04B6: 0x2610,
-        0x04B7: 0x2E10,
-        0x04B8: 0xC1C0,
-        0x04B9: 0x3E05,
-        0x04BA: 0xA606,
-        0x04BB: 0x07FD,
-        0x04BC: 0xB003,
-        0x04BD: 0x2E01,
-        0x04BE: 0xC1C0,
-        0x04C0: 0xFE06,
-        0x04C1: 0xFE04,
-        0x04C2: 0xFE02,
-        0x04C3: 0xFE00,
+        0x04A0: 0x3E06,     // ST R7, SaveR7
+        0x04A1: 0xE006,     // LEA R0, Message
+        0x04A2: 0xF022,     // PUTS
+        0x04A3: 0xF020,     // GETC
+        0x04A4: 0xF021,     // OUT
+        0x04A5: 0x2E01,     // LD R7, SaveR7
+        0x04A6: 0xC1C0,     // RET
+        0x04A7: 0x3001,     // SaveR7 (.BLKW #1)
+        /* the "Input a character> " message goes here */
         // Implementation of PUTSP
         0x04E0: 0x3E27,
         0x04E1: 0x3022,
@@ -161,15 +135,24 @@ var lc3osSymbols;
         // Machine control register
         0xFFFE: 0xFFFF,
     };
+
     // Fill in bad traps
     for (var i = 0; i < 0xFF; i++) {
         if (!(i in lc3os)) {
             lc3os[i] = 0xFD00;
         }
     }
+
+    // Fill in input prompt
+    var inputPrompt = 'Input a character> \0';
+    for (var i = 0; i < inputPrompt.length; i++) {
+        lc3os[0x04A8 + i] = inputPrompt.charCodeAt(i);
+    }
+
     // Fill in halt message
     var haltMessage = '\n----- Halting the processor ----- \n\0';
     for (var i = 0; i < haltMessage.length; i++) {
         lc3os[0xFD80 + i] = haltMessage.charCodeAt(i);
     }
+
 })();
