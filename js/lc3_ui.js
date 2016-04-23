@@ -2,6 +2,73 @@ $(document).ready(function() {
     var lc3 = new LC3();
     window.lc3 = lc3; // for ease of debugging
 
+    /**
+     * Trigger a download of the provided byte array.
+     * This is a compatibility bridge.
+     */
+    function doDownload(bytes) {
+        if (window.location.hash === '#blob-download') {
+            downloadViaBlob(bytes);
+        } else {
+            downloadViaAnchorTag(bytes);
+        }
+    }
+
+    /**
+     * Download the provided byte array by triggering an <a download="...">.
+     * Works great in Chrome, and lets you specify the file name, too.
+     * Doesn't work in Firefox.
+     */
+    function downloadViaAnchorTag(bytes) {
+        var encodedParts = new Array(bytes.length);
+        for (var i = 0; i < bytes.length; i++) {
+            var b = bytes[i];
+            encodedParts[i] = (b < 0x10 ? '%0' : '%') + b.toString(16);
+        }
+        var encoded = encodedParts.join('');
+        var uri = 'data:application/octet-stream,' + encoded;
+        $('<a>').attr('href', uri).prop('download', 'output')[0].click();
+    }
+
+    /**
+     * Download the provided byte array using the Blob API.
+     * Seems to work in both Firefox and Chrome,
+     * but doesn't let you specify the file name
+     * (gives some kind of UUID instead).
+     */
+    function downloadViaBlob(bytes) {
+        var blob = new Blob([bytes], { type: 'application/octet-stream' });
+        var url = URL.createObjectURL(blob);
+        window.location = url;
+    }
+
+    /**
+     * Convert an array of words to an array of bytes.
+     * The resulting array will have twice the length of the input array.
+     */
+    function wordsToBytes(words) {
+        var arr = new Uint8Array(2 * words.length);
+        for (var i = 0; i < words.length; i++) {
+            var word = words[i];
+            var byte1 = (word >> 8) & 0xFF;
+            var byte2 = word & 0xFF;
+            arr[2 * i] = byte1;
+            arr[2 * i + 1] = byte2;
+        }
+        return arr;
+    }
+
+    /**
+     * Convert a string to an array of bytes.
+     */
+    function stringToBytes(str) {
+        var arr = new Uint8Array(str.length);
+        for (var i = 0; i < str.length; i++) {
+            arr[i] = str.charCodeAt(i);
+        }
+        return arr;
+    }
+
     /*
      * Address of the top value in the table.
      */
@@ -1197,21 +1264,6 @@ $(document).ready(function() {
         var $successAlert = $modal.find('.alert-success');
         var $errorAlert = $modal.find('.alert-danger');
 
-        var timestamp = function() {
-            return new Date().toISOString().replace(/-/g, '');
-        };
-        var encodeByte = function(b) {
-            return (b < 0x10 ? '%0' : '%') + b.toString(16);
-        };
-        var encodeWord = function(w) {
-            return encodeByte(w >> 8) + encodeByte(w & 0xFF);
-        }
-        var doDownload = function(encoded, prefix, suffix) {
-            var uri = 'data:application/octet-stream,' + encoded;
-            var name = prefix + timestamp() + suffix;
-            $('<a>').attr('href', uri).prop('download', name)[0].click();
-        };
-
         var assemblyResult = null;
         $btnAssemble.click(function() {
             var code = $textarea.val();
@@ -1240,23 +1292,19 @@ $(document).ready(function() {
             }
             var orig = assemblyResult.orig;
             var mc = assemblyResult.machineCode;
-            var enc = new Array(mc.length + 1);
-            enc[0] = encodeWord(orig);
-            for (var i = 0; i < mc.length; i++) {
-                enc[i + 1] = encodeWord(mc[i]);
-            }
-            doDownload(enc.join(''), 'assembly-', '.obj');
+            var bytes = wordsToBytes([orig].concat(mc));
+            doDownload(bytes);
         });
         $btnDownloadSymbol.click(function() {
             if (assemblyResult === null) {
                 return;
             }
-            var pre = '//%20';
+            var pre = '// ';
             var lines = [];
             var symbols = assemblyResult.symbolTable;
-            lines.push(pre + 'Symbol%20table');
-            lines.push(pre + 'Symbol%20Name%20%20%20%20%20%20%20Page%20Address');
-            lines.push(pre + '----------------%20%20------------');
+            lines.push(pre + 'Symbol table');
+            lines.push(pre + 'Symbol Name       Page Address');
+            lines.push(pre + '----------------  ------------');
             // Convert to 2D list (list of tuples)
             var tuples = [];
             for (var symbol in symbols) {
@@ -1266,12 +1314,12 @@ $(document).ready(function() {
             for (var i = 0; i < tuples.length; i++) {
                 var label = tuples[i][0];
                 var address = tuples[i][1];
-                var formattedName = label + Array(17 - label.length).join('%20');
+                var formattedName = label + Array(17 - label.length).join(' ');
                 var formattedAddress = LC3Util.toHexString(address).substring(1);
-                lines.push(pre + formattedName + '%20%20' + formattedAddress);
+                lines.push(pre + formattedName + '  ' + formattedAddress);
             }
             lines.push(''); // to get an end-of-file line terminator
-            doDownload(lines.join('%0A'), 'assembly-', '.sym');
+            doDownload(stringToBytes(lines.join('\n')));
         });
 
         $inputContainer.bind({
@@ -1339,21 +1387,6 @@ $(document).ready(function() {
         var $successAlert = $modal.find('.alert-success');
         var $errorAlert = $modal.find('.alert-danger');
 
-        var timestamp = function() {
-            return new Date().toISOString().replace(/-/g, '');
-        };
-        var encodeByte = function(b) {
-            return (b < 0x10 ? '%0' : '%') + b.toString(16);
-        };
-        var encodeWord = function(w) {
-            return encodeByte(w >> 8) + encodeByte(w & 0xFF);
-        }
-        var doDownload = function(encoded, prefix, suffix) {
-            var uri = 'data:application/octet-stream,' + encoded;
-            var name = prefix + timestamp() + suffix;
-            $('<a>').attr('href', uri).prop('download', name)[0].click();
-        };
-
         var assemblyResult = null;
         $btnProcess.click(function() {
             var code = $textarea.val();
@@ -1377,12 +1410,8 @@ $(document).ready(function() {
             }
             var orig = assemblyResult.orig;
             var mc = assemblyResult.machineCode;
-            var enc = new Array(mc.length + 1);
-            enc[0] = encodeWord(orig);
-            for (var i = 0; i < mc.length; i++) {
-                enc[i + 1] = encodeWord(mc[i]);
-            }
-            doDownload(enc.join(''), 'raw-', '.obj');
+            var bytes = wordsToBytes([orig].concat(mc));
+            doDownload(bytes);
         });
 
         $inputContainer.bind({
