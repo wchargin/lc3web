@@ -7,7 +7,11 @@ $(document).ready(function() {
      * This is a compatibility bridge.
      */
     function doDownload(bytes) {
-        if (window.location.hash === '#blob-download') {
+        // The former works in all browsers,
+        // but doesn't let us specify the file name,
+        // so you get some kind of UUID instead of "symbols_<timestamp>.sym."
+        // The latter lacks Firefox support.
+        if (true) {
             downloadViaBlob(bytes);
         } else {
             downloadViaAnchorTag(bytes);
