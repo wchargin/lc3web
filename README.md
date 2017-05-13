@@ -1,4 +1,8 @@
 # lc3web
 web-based simulator for LC-3
 
-**NOTE:** Development of this project has shifted to [wchargin/lc3](https://github.com/wchargin/lc3). I'll still fix bugs here as they arise, though—feel free to [open an issue on this repository](https://github.com/wchargin/lc3web/issues).
+I'm not actively developing this anymore. That said, if you find a bug,
+please [submit an issue][issues]. If you have a reasonable feature
+request, feel free to open an issue for that, too.
+
+[issues]: https://github.com/wchargin/lc3web/issues
