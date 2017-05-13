@@ -13,19 +13,30 @@ window.LC3Util = {
             value = value.slice(1);
             negative = true;
         }
-        if (value[0] === 'x') {
-            var hexDigits = value.slice(1);
-            if (hexDigits.match(/[^0-9a-f]/)) {
-                return NaN;
-            }
-            var num = parseInt(hexDigits, 16);
-            return negative ? -num : num;
-        } else {
-            if (value.match(/[^0-9]/)) {
-                return NaN;
-            }
-            var num = parseInt(value);
-            return negative ? -num : num;
+        switch (value[0]) {
+            // Hex: input is like "x123"
+            case 'x':
+                var hexDigits = value.slice(1);
+                if (hexDigits.match(/[^0-9a-f]/)) {
+                    return NaN;
+                }
+                var num = parseInt(hexDigits, 16);
+                return negative ? -num : num;
+            // Binary: input is like "b1101"
+            case 'b':
+                var binaryDigits = value.slice(1);
+                if (binaryDigits.match(/[^01]/)) {
+                    return NaN;
+                }
+                var num = parseInt(binaryDigits, 2);
+                return negative ? -num : num;
+            // Decimal: input is like "1234"
+            default:
+                if (value.match(/[^0-9]/)) {
+                    return NaN;
+                }
+                var num = parseInt(value);
+                return negative ? -num : num;
         }
     },
 

@@ -178,21 +178,31 @@ var assemble = (function() {
             string = string.slice(1);
             negative = true;
         }
-
-        var num = undefined;
-        if (string[0] === 'x') {
-            var hexDigits = string.slice(1);
-            if (hexDigits.match(/[^0-9a-f]/)) {
-                return NaN;
-            }
-            num = parseInt(hexDigits, 16);
-        } else {
-            if (string.match(/[^0-9]/)) {
-                return NaN;
-            }
-            num = parseInt(string);
+        switch (string[0]) {
+            // Hex: input is like "x123"
+            case 'x':
+                var hexDigits = string.slice(1);
+                if (hexDigits.match(/[^0-9a-f]/)) {
+                    return NaN;
+                }
+                var num = parseInt(hexDigits, 16);
+                return negative ? -num : num;
+            // Binary: input is like "b1101"
+            case 'b':
+                var binaryDigits = string.slice(1);
+                if (binaryDigits.match(/[^01]/)) {
+                    return NaN;
+                }
+                var num = parseInt(binaryDigits, 2);
+                return negative ? -num : num;
+            // Decimal: input is like "1234"
+            default:
+                if (string.match(/[^0-9]/)) {
+                    return NaN;
+                }
+                var num = parseInt(string);
+                return negative ? -num : num;
         }
-        return negative ? -num : num;
     }
 
     /*
@@ -340,7 +350,9 @@ var assemble = (function() {
     function parseLiteral(text) {
         var e = new Error('Invalid numeric literal: \'' + text + '\'');
         var first = text.charAt(0);
-        if (first !== '#' && first.toLowerCase() !== 'x') {
+        if (first !== '#'
+                && first.toLowerCase() !== 'x'
+                && first.toLowerCase() !== 'b') {
             throw e;
         }
 
