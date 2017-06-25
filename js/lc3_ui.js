@@ -516,6 +516,11 @@ $(document).ready(function() {
             $('#mem-jumpto').focus();
         });
         $('#mem-jumpto').on('input', performJumpTo);
+        $('#mem-jumpto').on('keypress', function (e) {
+            if (e.keyCode === 13) {  // Enter
+                performJumpTo();
+            }
+        });
 
         $('#mem-jump-pc').click(function() {
             displayMemory(lc3.pc);
