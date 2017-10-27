@@ -14,6 +14,11 @@ html {
     font-weight: bold;
 }
 
+#register-reset-buttons {
+    text-align: right;
+    margin-top: 10px;
+}
+
 .memory-label span {
     max-width: 100pt;
     overflow-wrap: break-word;

@@ -942,6 +942,24 @@ $(document).ready(function() {
         $('.hex-value').not('.hex-no-tooltip').tooltip( { title: hexValueTooltipTitle });
     })();
 
+    // Set up register-reset buttons
+    (function() {
+        $('#reset-numeric').click(function() {
+            lc3.resetNumericRegisters();
+            refreshRegisters();
+            sendEvent('controls', 'reset_numeric');
+        });
+        $('#reset-registers').click(function() {
+            lc3.resetAllRegisters();
+            refreshRegisters();
+            refreshMemoryDisplay();
+            if ($('#follow-pc').prop('checked')) {
+                followPC();
+            }
+            sendEvent('controls', 'reset_registers');
+        });
+    })();
+
     // Set up execution control buttons.
     (function() {
         $('#control-step').click(function() {

@@ -17,17 +17,10 @@ var LC3 = function() {
         }
     };
 
-    // Create and initialize standard registers (R0 to R7)
+    // Create and initialize registers
     this.r = new Array(8);
-    for (var i = 0; i < this.r.length; i++) {
-        this.r[i] = 0;
-    }
-
-    // Initialize special registers
-    this.pc = 0x3000;
-    this.ir = 0;
-    this.psr = 0x8002;
     this.specialRegisters = ['pc', 'ir', 'psr'];
+    this.resetAllRegisters();
 
     // Dictionaries for linking addresses and labels
     this.labelToAddress = {};
@@ -628,6 +621,18 @@ LC3.prototype.setRegister = function(register, value) {
         }
     }
     return false;
+}
+
+LC3.prototype.resetNumericRegisters = function() {
+    for (var i = 0; i < this.r.length; i++) {
+        this.r[i] = 0;
+    }
+}
+LC3.prototype.resetAllRegisters = function() {
+    this.resetNumericRegisters();
+    this.pc = 0x3000;
+    this.ir = 0;
+    this.psr = 0x8002;
 }
 
 LC3.prototype.formatConditionCode = function() {
