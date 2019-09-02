@@ -1,8 +1,9 @@
 # lc3web
-web-based simulator for LC-3
 
-I'm not actively developing this anymore. That said, if you find a bug,
-please [submit an issue][issues]. If you have a reasonable feature
-request, feel free to open an issue for that, too.
+Web-based simulator for the LC-3 teaching computer.
 
-[issues]: https://github.com/wchargin/lc3web/issues
+This project is **complete.** Please [open an issue] if you find any
+bugs; I’ll be happy to fix them. Small feature requests may be
+entertained. Large new features are not planned.
+
+[open an issue]: https://github.com/wchargin/lc3web/issues
