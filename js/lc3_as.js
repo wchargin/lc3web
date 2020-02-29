@@ -943,7 +943,7 @@ var assemble = (function() {
                     var parsed = withContext(parseOffset, ctx)(0, offset, symbols, bits);
                     return parsed;
                 };
-                var offset = extractOffset(operands[0], 16);
+                var offset = extractOffset(operands[0], 17);
                 return [offset];
             }
             
