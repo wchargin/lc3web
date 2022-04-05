@@ -47,6 +47,22 @@ $(document).ready(function() {
     }
 
     /**
+     * Convert an array of words to a string of number with base format.
+     */
+    function wordsToBaseStr(words, base) {
+        var str = '';
+        for (var i = 0; i < words.length; i++) {
+            var word = words[i];
+            var numlen = 16;
+            if(base == 16) {
+                numlen = 4;
+            }
+            str += word.toString(base).toUpperCase().padStart(numlen, '0') + '\n';
+        }
+        return str;
+    }
+
+    /**
      * Convert an array of words to an array of bytes.
      * The resulting array will have twice the length of the input array.
      */
@@ -1282,6 +1298,8 @@ $(document).ready(function() {
         var $releaseMessage = $('#release-message');
         var $btnAssemble = $('#btn-assemble');
         var $btnLoad = $('#btn-assembly-load');
+        var $btnDownloadBin = $('#btn-download-bin');
+        var $btnDownloadHex = $('#btn-download-hex');
         var $btnDownloadObject = $('#btn-download-object');
         var $btnDownloadSymbol = $('#btn-download-symbol');
 
@@ -1312,6 +1330,24 @@ $(document).ready(function() {
         $btnLoad.click(function() {
             lc3.loadAssembled(assemblyResult);
             $modal.modal('hide');
+        });
+        $btnDownloadBin.click(function() {
+            if (assemblyResult === null) {
+                return;
+            }
+            var orig = assemblyResult.orig;
+            var mc = assemblyResult.machineCode;
+            var bytes = wordsToBaseStr([orig].concat(mc), 2);
+            doDownload(bytes);
+        });
+        $btnDownloadHex.click(function() {
+            if (assemblyResult === null) {
+                return;
+            }
+            var orig = assemblyResult.orig;
+            var mc = assemblyResult.machineCode;
+            var bytes = wordsToBaseStr([orig].concat(mc), 16);
+            doDownload(bytes);
         });
         $btnDownloadObject.click(function() {
             if (assemblyResult === null) {
