@@ -678,8 +678,6 @@ LC3.prototype.updateIO = function() {
             type: 'keyout',
             value: keyPacked,
         }
-        console.log(ev)
-        console.log(evPacked);
         this.notifyListeners(ev);
         if(evPacked !== 0) this.notifyListeners(evPacked);
         this.setMemory(this.dsr, dsrValue | 0x8000);
