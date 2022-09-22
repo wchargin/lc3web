@@ -672,7 +672,14 @@ LC3.prototype.updateIO = function() {
             type: 'keyout',
             value: key,
         };
+        // Accommodate for packed input
+        var keyPacked = (this.getMemory(this.ddr) & 0xFF00) >> 8;
+        var evPacked = {
+            type: 'keyout',
+            value: keyPacked,
+        }
         this.notifyListeners(ev);
+        if(evPacked !== 0) this.notifyListeners(evPacked);
         this.setMemory(this.dsr, dsrValue | 0x8000);
     }
 };
